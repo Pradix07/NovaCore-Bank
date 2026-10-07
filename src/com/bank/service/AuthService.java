@@ -15,11 +15,12 @@ import com.bank.service.interfaces.IAuthService;
 
 /**
  * ============================================================================
- * SERVICE: AuthService
+ * SERVICE: AuthService (Indian Banking System Authentication & KYC)
  * ============================================================================
  * Demonstrates:
  * - Interface Implementation (implements IAuthService)
  * - Security & Cryptography (SHA-256 Hashing, UUID session management)
+ * - Indian KYC Onboarding (PAN, Aadhaar, UPI ID, IFSC Assignment)
  * - Audit logging and authentication state validation
  */
 public class AuthService implements IAuthService {
@@ -37,7 +38,7 @@ public class AuthService implements IAuthService {
         }
 
         if (!user.isActive()) {
-            throw new AuthenticationException("Your account is currently disabled. Please contact bank administration.");
+            throw new AuthenticationException("Your account is currently disabled. Please contact NovaCore Bank administration.");
         }
 
         if (!SecurityUtil.verifyPassword(password, user.getPasswordHash())) {
@@ -56,7 +57,7 @@ public class AuthService implements IAuthService {
                 user.getFullName(),
                 user.getRole(),
                 "USER_LOGIN",
-                "User successfully logged in into " + user.getRole() + " portal.",
+                "User successfully logged into " + user.getRole() + " portal at NovaCore Bank of India.",
                 "127.0.0.1"
         ));
 
@@ -67,6 +68,13 @@ public class AuthService implements IAuthService {
     }
 
     public Map<String, Object> registerCustomer(String username, String password, String fullName, String email, String phone, String address, String panOrTaxId, String initialAccountType, double initialDeposit) {
+        return registerCustomerDetailed(username, password, fullName, email, phone, address, panOrTaxId, "XXXX-XXXX-1234", initialAccountType, initialDeposit, null, null);
+    }
+
+    /**
+     * Detailed customer registration with Indian KYC & Account specification.
+     */
+    public Map<String, Object> registerCustomerDetailed(String username, String password, String fullName, String email, String phone, String address, String panOrTaxId, String aadhaarNumber, String initialAccountType, double initialDeposit, String extra1, String extra2) {
         if (username == null || username.trim().length() < 3) {
             throw new ValidationException("Username must be at least 3 characters long.");
         }
@@ -81,28 +89,48 @@ public class AuthService implements IAuthService {
         }
 
         if (dataStore.getUserByUsername(username.trim()) != null) {
-            throw new ValidationException("Username '" + username + "' is already taken.");
+            throw new ValidationException("Username '" + username + "' is already registered with NovaCore Bank.");
         }
 
         String custId = SecurityUtil.generateId("USR-CUST");
         String passwordHash = SecurityUtil.hashPassword(password);
-        Customer customer = new Customer(custId, username.trim(), passwordHash, fullName.trim(), email.trim(), phone != null ? phone.trim() : "", address != null ? address.trim() : "", panOrTaxId != null ? panOrTaxId.trim() : "", "1234");
+        String pan = (panOrTaxId != null && !panOrTaxId.trim().isEmpty()) ? panOrTaxId.trim().toUpperCase() : "AAAPA1234B";
+        String aadhaar = (aadhaarNumber != null && !aadhaarNumber.trim().isEmpty()) ? aadhaarNumber.trim() : "XXXX-XXXX-9876";
+        String upi = username.trim().toLowerCase() + "@novabank";
 
-        // Create default account
-        String accType = (initialAccountType != null && initialAccountType.equalsIgnoreCase("CHECKING")) ? "CHECKING" : "SAVINGS";
+        Customer customer = new Customer(custId, username.trim(), passwordHash, fullName.trim(), email.trim(), phone != null ? phone.trim() : "+91-9876543210", address != null ? address.trim() : "Mumbai, Maharashtra", pan, aadhaar, upi, "1234");
+
+        // Determine Account Type (SAVINGS, CURRENT, STUDENT)
+        String accType = (initialAccountType != null) ? initialAccountType.toUpperCase().trim() : "SAVINGS";
+        double minDeposit = "STUDENT".equals(accType) ? 100.0 : ("CURRENT".equals(accType) ? 5000.0 : 1000.0);
+        double deposit = Math.max(initialDeposit, minDeposit);
+
         String accNum = SecurityUtil.generateAccountNumber(accType);
-        double deposit = Math.max(initialDeposit, 100.0);
-
         Account account;
-        if ("SAVINGS".equals(accType)) {
-            account = new SavingsAccount(accNum, custId, deposit, "INR", dataStore.getSystemSettings().getDefaultSavingsInterestRate(), dataStore.getSystemSettings().getMinSavingsBalance());
+
+        if ("CURRENT".equals(accType)) {
+            String tradeLicenseOrGst = (extra1 != null && !extra1.trim().isEmpty()) ? extra1.trim() : "27AAAPA1234B1Z5";
+            String businessName = (extra2 != null && !extra2.trim().isEmpty()) ? extra2.trim() : fullName + " Enterprises";
+            account = new CurrentAccount(accNum, custId, deposit, "INR", tradeLicenseOrGst, businessName, 50000.0, 5000.0);
+            account.setBranchName("Mumbai Fort Main Branch");
+            account.setIfscCode("NOVA0001001");
+        } else if ("STUDENT".equals(accType)) {
+            String inst = (extra1 != null && !extra1.trim().isEmpty()) ? extra1.trim() : "Educational University";
+            String stuId = (extra2 != null && !extra2.trim().isEmpty()) ? extra2.trim() : "STU-" + ((int)(Math.random() * 9000) + 1000);
+            account = new StudentAccount(accNum, custId, deposit, "INR", inst, stuId, 0.035, 100.0, 100000.0, 20000.0);
+            account.setBranchName("New Delhi Connaught Place Branch");
+            account.setIfscCode("NOVA0003003");
         } else {
-            account = new CheckingAccount(accNum, custId, deposit, "INR", 1000.0);
+            accType = "SAVINGS";
+            account = new SavingsAccount(accNum, custId, deposit, "INR", dataStore.getSystemSettings().getDefaultSavingsInterestRate(), dataStore.getSystemSettings().getMinSavingsBalance(), 50000.0);
+            account.setBranchName("Mumbai Fort Main Branch");
+            account.setIfscCode("NOVA0001001");
         }
 
         account.setCardNumber(SecurityUtil.generateCardNumber());
         account.setCardExpiry(SecurityUtil.generateCardExpiry());
         account.setCardCvv(SecurityUtil.generateCvv());
+        account.setUpiId(upi);
 
         customer.addAccountNumber(account.getAccountNumber());
 
@@ -130,7 +158,7 @@ public class AuthService implements IAuthService {
                 fullName,
                 "CUSTOMER",
                 "ACCOUNT_REGISTERED",
-                "New customer registered with initial account #" + accNum + " ($" + deposit + ")",
+                "New customer onboarded with initial " + accType + " account #" + accNum + " (₹" + String.format("%,.2f", deposit) + ", IFSC: " + account.getIfscCode() + ", PAN: " + pan + ")",
                 "127.0.0.1"
         ));
 

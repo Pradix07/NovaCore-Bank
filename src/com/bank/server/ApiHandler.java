@@ -14,6 +14,17 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * ============================================================================
+ * REST API CONTROLLER: ApiHandler (Indian Banking System)
+ * ============================================================================
+ * Dispatches endpoints for:
+ * - Authentication & Indian KYC Registration
+ * - Customer Services (Passbook, UPI/IMPS/NEFT/RTGS Transfers, Deposit, Withdraw)
+ * - Multi-Account Management (Savings, Current with GST, Student with College ID)
+ * - Loan Underwriting & Investments (Fixed Deposits, SGB, Mutual Funds)
+ * - Administrative Controls & Real-Time Audit Trail
+ */
 public class ApiHandler implements HttpHandler {
 
     private final AuthService authService = new AuthService();
@@ -24,7 +35,7 @@ public class ApiHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        // Enable CORS
+        // Enable CORS for cross-origin browser interactions
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -71,16 +82,19 @@ public class ApiHandler implements HttpHandler {
             String ph = (String) req.get("phone");
             String addr = (String) req.get("address");
             String pan = (String) req.get("panOrTaxId");
+            String aadhaar = (String) req.get("aadhaarNumber");
             String accType = (String) req.get("accountType");
-            double dep = req.containsKey("initialDeposit") ? ((Number) req.get("initialDeposit")).doubleValue() : 500.0;
-            Map<String, Object> res = authService.registerCustomer(u, p, fn, em, ph, addr, pan, accType, dep);
+            String extra1 = (String) req.get("extra1"); // Trade License for Current or Institution for Student
+            String extra2 = (String) req.get("extra2"); // Business Name or Student ID
+            double dep = req.containsKey("initialDeposit") ? ((Number) req.get("initialDeposit")).doubleValue() : 1000.0;
+            Map<String, Object> res = authService.registerCustomerDetailed(u, p, fn, em, ph, addr, pan, aadhaar, accType, dep, extra1, extra2);
             sendJson(exchange, 201, res);
         } else if ("/api/auth/logout".equals(path) && "POST".equalsIgnoreCase(method)) {
             String token = extractToken(exchange);
             authService.logout(token);
             Map<String, Object> res = new HashMap<>();
             res.put("status", "SUCCESS");
-            res.put("message", "Logged out successfully.");
+            res.put("message", "Logged out successfully from NovaCore Bank of India.");
             sendJson(exchange, 200, res);
         } else if ("/api/auth/me".equals(path) && "GET".equalsIgnoreCase(method)) {
             User user = requireUser(exchange);
@@ -103,9 +117,11 @@ public class ApiHandler implements HttpHandler {
             String fromAcc = (String) req.get("fromAccount");
             String toAcc = (String) req.get("toAccount");
             double amount = req.containsKey("amount") ? ((Number) req.get("amount")).doubleValue() : 0.0;
+            String transferMode = (String) req.get("transferMode");
+            String recipientIfsc = (String) req.get("recipientIfsc");
             String desc = (String) req.get("description");
             String pin = (String) req.get("securityPin");
-            Map<String, Object> res = transactionService.transferFunds(user.getId(), fromAcc, toAcc, amount, desc, pin);
+            Map<String, Object> res = transactionService.transferFundsDetailed(user.getId(), fromAcc, toAcc, amount, transferMode, recipientIfsc, desc, pin);
             sendJson(exchange, 200, res);
         } else if ("/api/customer/deposit".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, Object> req = readJsonBody(exchange);
@@ -161,8 +177,10 @@ public class ApiHandler implements HttpHandler {
         } else if ("/api/customer/accounts/open".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, Object> req = readJsonBody(exchange);
             String type = (String) req.get("accountType");
-            double initDep = req.containsKey("initialDeposit") ? ((Number) req.get("initialDeposit")).doubleValue() : 500.0;
-            Object res = accountService.openNewAccount(user.getId(), type, initDep).toMap();
+            double initDep = req.containsKey("initialDeposit") ? ((Number) req.get("initialDeposit")).doubleValue() : 1000.0;
+            String extra1 = (String) req.get("extra1");
+            String extra2 = (String) req.get("extra2");
+            Object res = accountService.openNewAccountDetailed(user.getId(), type, initDep, extra1, extra2).toMap();
             sendJson(exchange, 201, res);
         } else if ("/api/customer/cards/toggle-freeze".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, Object> req = readJsonBody(exchange);
@@ -220,57 +238,36 @@ public class ApiHandler implements HttpHandler {
         } else if ("/api/admin/users/status".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, Object> req = readJsonBody(exchange);
             String targetId = (String) req.get("userId");
-            boolean active = Boolean.TRUE.equals(req.get("active"));
+            boolean active = req.containsKey("active") && Boolean.TRUE.equals(req.get("active"));
             adminService.updateUserStatus(user.getId(), targetId, active);
             Map<String, Object> res = new HashMap<>();
             res.put("status", "SUCCESS");
+            res.put("active", active);
             sendJson(exchange, 200, res);
-        } else if ("/api/admin/users/delete".equals(path) && ("POST".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method))) {
+        } else if ("/api/admin/users/delete".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, Object> req = readJsonBody(exchange);
             String targetId = (String) req.get("userId");
             adminService.deleteUser(user.getId(), targetId);
             Map<String, Object> res = new HashMap<>();
             res.put("status", "SUCCESS");
             sendJson(exchange, 200, res);
-        } else if ("/api/admin/transactions".equals(path) && "GET".equalsIgnoreCase(method)) {
-            Map<String, String> query = parseQueryParams(exchange.getRequestURI().getQuery());
-            String type = query.get("type");
-            String search = query.get("search");
-            Double min = query.containsKey("min") ? Double.parseDouble(query.get("min")) : null;
-            Double max = query.containsKey("max") ? Double.parseDouble(query.get("max")) : null;
-            List<Map<String, Object>> res = transactionService.filterTransactions(null, type, search, min, max);
-            sendJson(exchange, 200, res);
-        } else if ("/api/admin/loans".equals(path) && "GET".equalsIgnoreCase(method)) {
-            List<Map<String, Object>> res = new ArrayList<>();
-            for (var l : com.bank.repository.DataStore.getInstance().getAllLoans()) {
-                res.add(l.toMap());
-            }
-            sendJson(exchange, 200, res);
         } else if ("/api/admin/loans/review".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, Object> req = readJsonBody(exchange);
             String loanId = (String) req.get("loanId");
-            String action = (String) req.get("action");
+            String action = (String) req.get("action"); // "APPROVE" or "REJECT"
             String remarks = (String) req.get("remarks");
             String targetAcc = (String) req.get("targetAccountNumber");
             Object res = bankingService.reviewLoan(user.getId(), loanId, action, remarks, targetAcc).toMap();
             sendJson(exchange, 200, res);
-        } else if ("/api/admin/investments".equals(path) && "GET".equalsIgnoreCase(method)) {
-            List<Map<String, Object>> res = new ArrayList<>();
-            for (var inv : com.bank.repository.DataStore.getInstance().getAllInvestments()) {
-                res.add(inv.toMap());
-            }
-            sendJson(exchange, 200, res);
-        } else if ("/api/admin/audit-logs".equals(path) && "GET".equalsIgnoreCase(method)) {
-            List<Map<String, Object>> res = adminService.getAllAuditLogs();
-            sendJson(exchange, 200, res);
-        } else if ("/api/admin/settings".equals(path) && "GET".equalsIgnoreCase(method)) {
-            sendJson(exchange, 200, com.bank.repository.DataStore.getInstance().getSystemSettings().toMap());
         } else if ("/api/admin/settings/update".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, Object> req = readJsonBody(exchange);
             adminService.updateSystemSettings(user.getId(), req);
             Map<String, Object> res = new HashMap<>();
             res.put("status", "SUCCESS");
-            res.put("settings", com.bank.repository.DataStore.getInstance().getSystemSettings().toMap());
+            res.put("message", "System settings updated successfully.");
+            sendJson(exchange, 200, res);
+        } else if ("/api/admin/audit-logs".equals(path) && "GET".equalsIgnoreCase(method)) {
+            List<Map<String, Object>> res = adminService.getAllAuditLogs();
             sendJson(exchange, 200, res);
         } else {
             sendError(exchange, 404, "Unknown admin endpoint: " + path);
@@ -287,17 +284,29 @@ public class ApiHandler implements HttpHandler {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7).trim();
         }
-        return exchange.getRequestHeaders().getFirst("X-Auth-Token");
+        String query = exchange.getRequestURI().getQuery();
+        if (query != null) {
+            Map<String, String> params = parseQueryParams(query);
+            if (params.containsKey("token")) {
+                return params.get("token");
+            }
+        }
+        return null;
     }
 
     private Map<String, Object> readJsonBody(HttpExchange exchange) throws IOException {
         InputStream is = exchange.getRequestBody();
         String json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        return JsonUtil.parseObject(json);
+        if (json.trim().isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, Object> map = JsonUtil.parseObject(json);
+        return map != null ? map : new HashMap<>();
     }
 
     private void sendJson(HttpExchange exchange, int statusCode, Object data) throws IOException {
-        byte[] bytes = JsonUtil.toJson(data).getBytes(StandardCharsets.UTF_8);
+        String json = JsonUtil.toJson(data);
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.sendResponseHeaders(statusCode, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
@@ -307,26 +316,25 @@ public class ApiHandler implements HttpHandler {
 
     private void sendError(HttpExchange exchange, int statusCode, String message) throws IOException {
         Map<String, Object> err = new HashMap<>();
-        err.put("error", true);
+        err.put("status", "ERROR");
         err.put("statusCode", statusCode);
         err.put("message", message);
         sendJson(exchange, statusCode, err);
     }
 
-    private Map<String, String> parseQueryParams(String queryString) {
+    private Map<String, String> parseQueryParams(String query) {
         Map<String, String> map = new HashMap<>();
-        if (queryString == null || queryString.isEmpty()) return map;
-        String[] pairs = queryString.split("&");
-        for (String pair : pairs) {
-            int idx = pair.indexOf("=");
-            try {
-                if (idx > 0) {
-                    map.put(URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8),
-                            URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8));
-                } else if (idx == -1) {
-                    map.put(URLDecoder.decode(pair, StandardCharsets.UTF_8), "");
-                }
-            } catch (Exception ignored) {}
+        if (query == null || query.isEmpty()) return map;
+        String[] pairs = query.split("&");
+        for (String p : pairs) {
+            int idx = p.indexOf("=");
+            if (idx > 0) {
+                try {
+                    String k = URLDecoder.decode(p.substring(0, idx), StandardCharsets.UTF_8);
+                    String v = URLDecoder.decode(p.substring(idx + 1), StandardCharsets.UTF_8);
+                    map.put(k, v);
+                } catch (Exception ignored) {}
+            }
         }
         return map;
     }

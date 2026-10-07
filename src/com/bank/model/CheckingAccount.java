@@ -4,7 +4,10 @@ import com.bank.exceptions.InsufficientFundsException;
 import java.util.Map;
 
 /**
- * Checking Account with overdraft limit facility.
+ * ============================================================================
+ * CHECKING / OVERDRAFT ACCOUNT
+ * ============================================================================
+ * Standard Overdraft-enabled account with flexible credit buffer.
  */
 public class CheckingAccount extends Account {
     private static final long serialVersionUID = 1L;
@@ -13,7 +16,7 @@ public class CheckingAccount extends Account {
 
     public CheckingAccount() {
         super();
-        this.overdraftLimit = 1000.0;
+        this.overdraftLimit = 25000.0;
     }
 
     public CheckingAccount(String accountNumber, String customerId, double initialBalance, String currency, double overdraftLimit) {
@@ -28,18 +31,22 @@ public class CheckingAccount extends Account {
 
     @Override
     public double calculateAnnualInterest() {
-        return 0.0; // Checking accounts usually offer no or nominal interest
+        return 0.0; // Checking / transactional accounts offer zero interest
     }
 
     @Override
     public void withdraw(double amount) throws InsufficientFundsException {
         if (amount <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be greater than zero.");
+            throw new IllegalArgumentException("Withdrawal amount must be greater than zero. Received: ₹" + amount);
         }
         getLock().lock();
         try {
-            if (this.balance + this.overdraftLimit < amount) {
-                throw new InsufficientFundsException("Transaction failed: Exceeds available balance and overdraft limit of $" + String.format("%.2f", overdraftLimit));
+            double totalAvailable = this.balance + this.overdraftLimit;
+            if (amount > totalAvailable) {
+                throw new InsufficientFundsException(
+                    "Transaction failed: Exceeds available balance (₹" + String.format("%,.2f", balance) + 
+                    ") and Overdraft limit (₹" + String.format("%,.2f", overdraftLimit) + "). Total available: ₹" + String.format("%,.2f", totalAvailable)
+                );
             }
             this.balance -= amount;
         } finally {

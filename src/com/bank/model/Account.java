@@ -1,6 +1,7 @@
 package com.bank.model;
 
 import com.bank.exceptions.InsufficientFundsException;
+import com.bank.exceptions.InvalidAmountException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -8,12 +9,15 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Abstract base class for Bank Accounts.
+ * ============================================================================
+ * ABSTRACT BASE CLASS: Account
+ * ============================================================================
  * Demonstrates:
  * - OOP Principle: Abstraction & Inheritance
  * - OOP Principle: Interface Implementation (AccountOperations)
  * - OOP Principle: Encapsulation (protected fields with public getters/setters)
  * - Concurrency: Thread-Safe Concurrency control with ReentrantLock
+ * - Indian Banking System: INR Currency, IFSC Code, Branch, UPI ID, RuPay/Debit Card
  */
 public abstract class Account implements AccountOperations, Serializable {
     private static final long serialVersionUID = 1L;
@@ -21,8 +25,12 @@ public abstract class Account implements AccountOperations, Serializable {
     protected String accountNumber;
     protected String customerId;
     protected double balance;
-    protected String currency;
-    protected String status; // ACTIVE, FROZEN, CLOSED
+    protected String currency; // "INR"
+    protected String status;   // "ACTIVE", "FROZEN", "CLOSED"
+    protected String ifscCode; // e.g. "NOVA0001001"
+    protected String branchName; // e.g. "Mumbai Fort Main Branch"
+    protected String upiId;      // e.g. "customer@novabank"
+    protected String nomineeName;
     protected String createdAt;
     protected String cardNumber;
     protected String cardExpiry;
@@ -35,6 +43,8 @@ public abstract class Account implements AccountOperations, Serializable {
     public Account() {
         this.currency = "INR";
         this.status = "ACTIVE";
+        this.ifscCode = "NOVA0001001";
+        this.branchName = "Mumbai Central Main Branch";
         this.createdAt = LocalDateTime.now().toString();
         this.cardFrozen = false;
     }
@@ -44,7 +54,9 @@ public abstract class Account implements AccountOperations, Serializable {
         this.accountNumber = accountNumber;
         this.customerId = customerId;
         this.balance = initialBalance;
-        this.currency = currency;
+        if (currency != null && !currency.trim().isEmpty()) {
+            this.currency = currency;
+        }
     }
 
     public ReentrantLock getLock() {
@@ -55,13 +67,19 @@ public abstract class Account implements AccountOperations, Serializable {
     }
 
     // Abstract methods demonstrating Polymorphism
+    @Override
     public abstract String getAccountType();
+
+    @Override
     public abstract double calculateAnnualInterest();
+
+    @Override
     public abstract void withdraw(double amount) throws InsufficientFundsException;
 
+    @Override
     public void deposit(double amount) {
         if (amount <= 0) {
-            throw new IllegalArgumentException("Deposit amount must be greater than zero.");
+            throw new IllegalArgumentException("Deposit amount must be greater than zero. Received: ₹" + amount);
         }
         getLock().lock();
         try {
@@ -81,6 +99,10 @@ public abstract class Account implements AccountOperations, Serializable {
         map.put("currency", currency);
         map.put("status", status);
         map.put("accountType", getAccountType());
+        map.put("ifscCode", ifscCode);
+        map.put("branchName", branchName);
+        map.put("upiId", upiId != null ? upiId : (accountNumber + "@novabank"));
+        map.put("nomineeName", nomineeName != null ? nomineeName : "Not Nominated");
         map.put("createdAt", createdAt);
         map.put("cardNumber", cardNumber);
         map.put("cardExpiry", cardExpiry);
@@ -105,6 +127,18 @@ public abstract class Account implements AccountOperations, Serializable {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getIfscCode() { return ifscCode; }
+    public void setIfscCode(String ifscCode) { this.ifscCode = ifscCode; }
+
+    public String getBranchName() { return branchName; }
+    public void setBranchName(String branchName) { this.branchName = branchName; }
+
+    public String getUpiId() { return upiId; }
+    public void setUpiId(String upiId) { this.upiId = upiId; }
+
+    public String getNomineeName() { return nomineeName; }
+    public void setNomineeName(String nomineeName) { this.nomineeName = nomineeName; }
+
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
@@ -119,4 +153,10 @@ public abstract class Account implements AccountOperations, Serializable {
 
     public boolean isCardFrozen() { return cardFrozen; }
     public void setCardFrozen(boolean cardFrozen) { this.cardFrozen = cardFrozen; }
+
+    @Override
+    public String toString() {
+        return String.format("[%s] Acc: %s | IFSC: %s | Bal: ₹%,.2f | Status: %s",
+                getAccountType(), accountNumber, ifscCode, balance, status);
+    }
 }

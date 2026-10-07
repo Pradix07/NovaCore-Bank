@@ -1,4 +1,4 @@
-// Customer Dashboard Engine
+// Customer Dashboard Engine - NovaCore Bank of India
 let currentOverviewData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -91,37 +91,52 @@ function renderAccounts(accounts) {
   const container = document.getElementById('accounts-cards-container');
   if (!container) return;
 
-  container.innerHTML = accounts.map(acc => `
-    <div class="glass-card" style="position: relative; overflow: hidden; border-left: 4px solid ${acc.accountType === 'SAVINGS' ? 'var(--primary)' : 'var(--secondary)'};">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-        <div>
-          <span class="badge ${acc.accountType === 'SAVINGS' ? 'badge-primary' : 'badge-info'}">${acc.accountType} ACCOUNT</span>
-          <h4 style="margin-top: 6px; font-size: 1.1rem;">#${acc.accountNumber}</h4>
+  container.innerHTML = accounts.map(acc => {
+    let badgeClass = 'badge-primary';
+    let extraInfo = 'Interest: 4.0% p.a.';
+    if (acc.accountType === 'CURRENT') {
+      badgeClass = 'badge-info';
+      extraInfo = `GST: ${acc.tradeLicenseOrGst || 'Verified'} • Overdraft: ₹${(acc.overdraftLimit||50000).toLocaleString('en-IN')}`;
+    } else if (acc.accountType === 'STUDENT') {
+      badgeClass = 'badge-warning';
+      extraInfo = `Inst: ${acc.institutionName || 'University'} • Student ID: ${acc.studentId || 'Verified'}`;
+    }
+
+    return `
+      <div class="glass-card" style="position: relative; overflow: hidden; border-left: 4px solid var(--primary);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+          <div>
+            <span class="badge ${badgeClass}">${acc.accountType} ACCOUNT</span>
+            <h4 style="margin-top: 6px; font-size: 1.1rem;">#${acc.accountNumber}</h4>
+          </div>
+          <span class="badge ${acc.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">${acc.status}</span>
         </div>
-        <span class="badge ${acc.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">${acc.status}</span>
+        <div style="margin: 16px 0;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Available Vault Balance</div>
+          <div style="font-size: 1.7rem; font-weight: 800; color: #fff;">₹${acc.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+        </div>
+        <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
+          <span>IFSC: <strong style="color:#38bdf8;">${acc.ifscCode || 'NOVA0001001'}</strong> • UPI: <strong style="color:#cbd5e1;">${acc.upiId || (acc.accountNumber+'@novabank')}</strong></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <span>${extraInfo}</span>
+          <span>RuPay: •••• ${acc.cardNumber ? acc.cardNumber.slice(-4) : 'N/A'}</span>
+        </div>
       </div>
-      <div style="margin: 16px 0;">
-        <div style="font-size: 0.8rem; color: var(--text-muted);">Current Balance</div>
-        <div style="font-size: 1.7rem; font-weight: 800; color: #fff;">₹${acc.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-      </div>
-      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px;">
-        <span>${acc.accountType === 'SAVINGS' ? 'Interest: ' + acc.interestRate + '%' : 'Overdraft: ₹' + acc.overdraftLimit}</span>
-        <span>Card: •••• ${acc.cardNumber ? acc.cardNumber.slice(-4) : 'N/A'}</span>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderVirtualCard(account, profile) {
   const cardElem = document.getElementById('primary-virtual-card');
   if (!cardElem) return;
 
-  const cardNum = account.cardNumber || '4532 8899 1234 5678';
+  const cardNum = account.cardNumber || '6080 1234 5678 9012';
   const formattedNum = cardNum.replace(/(\d{4})/g, '$1 ').trim();
 
   document.getElementById('card-number-display').innerText = formattedNum;
   document.getElementById('card-holder-display').innerText = profile.fullName;
-  document.getElementById('card-expiry-display').innerText = account.cardExpiry || '12/28';
+  document.getElementById('card-expiry-display').innerText = account.cardExpiry || '10/29';
   document.getElementById('card-cvv-display').innerText = account.cardCvv || '742';
 
   const freezeBtn = document.getElementById('btn-freeze-card');
@@ -205,7 +220,7 @@ function renderInvestmentsSummary(investments) {
   if (!container) return;
 
   if (investments.length === 0) {
-    container.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">No active wealth investments. Create one below.</td></tr>';
+    container.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">No wealth portfolios booked yet.</td></tr>';
     return;
   }
 
@@ -213,31 +228,41 @@ function renderInvestmentsSummary(investments) {
     <tr>
       <td><strong>${inv.name}</strong></td>
       <td><span class="badge badge-info">${inv.type}</span></td>
-      <td>₹${inv.principalAmount.toLocaleString('en-IN')}</td>
-      <td><strong style="color: var(--success);">${inv.interestRate}% p.a.</strong></td>
-      <td><strong>₹${inv.currentMaturityValue.toLocaleString('en-IN')}</strong></td>
+      <td>₹${inv.principalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+      <td>${inv.interestRate}% p.a.</td>
+      <td style="color: var(--success); font-weight: 700;">₹${inv.currentMaturityValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
       <td>
         ${inv.status === 'ACTIVE' ? `
-          <button class="btn btn-secondary btn-sm" onclick="openWithdrawInvModal('${inv.id}', ${inv.currentMaturityValue})">Withdraw / Liquidate</button>
-        ` : `<span class="badge badge-warning">${inv.status}</span>`}
+          <button class="btn btn-secondary btn-sm" onclick="openWithdrawInvModal('${inv.id}', ${inv.currentMaturityValue})">Withdraw</button>
+        ` : `<span class="badge badge-danger">WITHDRAWN</span>`}
       </td>
     </tr>
   `).join('');
 }
 
 function populateAccountDropdowns(accounts) {
-  const selects = ['transfer-from-account', 'deposit-account', 'withdraw-account', 'loan-emi-account', 'invest-from-account', 'inv-payout-account'];
-  selects.forEach(id => {
-    const sel = document.getElementById(id);
-    if (sel) {
-      sel.innerHTML = accounts.map(a => `
-        <option value="${a.accountNumber}">#${a.accountNumber} (${a.accountType}) - ₹${a.balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</option>
-      `).join('');
-    }
+  const dropdownIds = [
+    'transfer-from-account',
+    'deposit-account',
+    'withdraw-account',
+    'invest-from-account',
+    'loan-emi-account',
+    'inv-payout-account'
+  ];
+
+  dropdownIds.forEach(id => {
+    const elem = document.getElementById(id);
+    if (!elem) return;
+    elem.innerHTML = accounts.map(a => `
+      <option value="${a.accountNumber}">
+        #${a.accountNumber} - ${a.accountType} (₹${a.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })})
+      </option>
+    `).join('');
   });
 }
 
 function populateProfileForm(profile) {
+  if (!profile) return;
   const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
   setVal('profile-fullname', profile.fullName);
   setVal('profile-email', profile.email);
@@ -245,22 +270,22 @@ function populateProfileForm(profile) {
   setVal('profile-address', profile.address);
 }
 
-// Transaction History Tab
+// Passbook / Transactions loader
 async function loadCustomerTransactions() {
-  const filterType = document.getElementById('filter-tx-type')?.value || 'ALL';
-  const search = document.getElementById('search-tx-input')?.value || '';
+  const type = document.getElementById('tx-type-filter')?.value || 'ALL';
+  const search = document.getElementById('tx-search-input')?.value || '';
 
   try {
-    const res = await fetch(`/api/customer/transactions?type=${encodeURIComponent(filterType)}&search=${encodeURIComponent(search)}`, {
+    const res = await fetch(`/api/customer/transactions?type=${encodeURIComponent(type)}&search=${encodeURIComponent(search)}`, {
       headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
     });
-
     const txs = await res.json();
-    const tbody = document.getElementById('full-transactions-table-body');
+
+    const tbody = document.getElementById('all-transactions-table-body');
     if (!tbody) return;
 
     if (txs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No matching transactions found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No transactions match your search filter.</td></tr>';
       return;
     }
 
@@ -268,22 +293,21 @@ async function loadCustomerTransactions() {
       const isCredit = ['DEPOSIT', 'TRANSFER_IN', 'INVESTMENT_RETURN', 'LOAN_DISBURSEMENT'].includes(t.type);
       return `
         <tr>
-          <td><code style="color: var(--primary); font-size: 0.85rem;">${t.referenceNumber || t.id}</code></td>
-          <td><span style="font-size: 0.85rem; color: var(--text-muted);">${t.timestamp}</span></td>
-          <td><span class="badge ${isCredit ? 'badge-success' : 'badge-primary'}">${t.type}</span></td>
-          <td>${t.description}</td>
-          <td><code style="font-size: 0.85rem;">${t.fromAccount} → ${t.toAccount}</code></td>
-          <td>
-            <strong style="color: ${isCredit ? 'var(--success)' : '#fff'};">
-              ${isCredit ? '+' : '-'}₹${t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-            </strong>
+          <td><span style="font-size: 0.8rem; color: var(--text-muted);">${t.timestamp}</span></td>
+          <td><span class="badge ${isCredit ? 'badge-success' : 'badge-danger'}">${t.type}</span></td>
+          <td>${t.description || '-'}</td>
+          <td><code>${t.fromAccount || '-'}</code> → <code>${t.toAccount || '-'}</code></td>
+          <td><span style="font-size: 0.8rem; color: #a5b4fc;">${t.referenceNumber || t.id}</span></td>
+          <td style="font-weight: 700; color: ${isCredit ? 'var(--success)' : '#fff'};">
+            ${isCredit ? '+' : '-'}₹${t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </td>
-          <td><span class="badge badge-success">${t.status}</span></td>
+          <td><span class="badge badge-success">SUCCESS</span></td>
         </tr>
       `;
     }).join('');
+
   } catch (err) {
-    Toast.error('Failed to load transaction history');
+    console.error('Error fetching transactions:', err);
   }
 }
 
@@ -291,17 +315,18 @@ async function loadCustomerTransactions() {
 function setupEmiCalculator() {
   const amountInput = document.getElementById('calc-loan-amount');
   const monthsInput = document.getElementById('calc-loan-months');
-  const rateInput = document.getElementById('calc-loan-rate');
+  const rateInput = document.getElementById('loan-type-select');
 
   if (!amountInput || !monthsInput) return;
 
   const update = () => {
-    const p = parseFloat(amountInput.value) || 0;
-    const n = parseInt(monthsInput.value) || 12;
-    const r = (parseFloat(rateInput?.value || 8.5) / 100) / 12;
+    const p = parseFloat(amountInput.value) || 500000;
+    const n = parseInt(monthsInput.value) || 60;
+    const r = (parseFloat(rateInput?.value === 'HOME' ? 8.4 : (rateInput?.value === 'EDUCATION' ? 7.2 : 10.5)) / 100) / 12;
 
     document.getElementById('display-calc-amount').innerText = '₹' + p.toLocaleString('en-IN');
     document.getElementById('display-calc-months').innerText = n + ' Months';
+    document.getElementById('display-calc-principal').innerText = '₹' + p.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
     let emi = 0;
     if (r === 0) {
@@ -320,6 +345,7 @@ function setupEmiCalculator() {
 
   amountInput.addEventListener('input', update);
   monthsInput.addEventListener('input', update);
+  rateInput?.addEventListener('change', update);
   update();
 }
 
@@ -333,6 +359,8 @@ function setupForms() {
       const fromAccount = document.getElementById('transfer-from-account').value;
       const toAccount = document.getElementById('transfer-to-account').value;
       const amount = parseFloat(document.getElementById('transfer-amount').value);
+      const transferMode = document.getElementById('transfer-mode')?.value || 'IMPS';
+      const recipientIfsc = document.getElementById('transfer-ifsc')?.value || 'NOVA0001001';
       const description = document.getElementById('transfer-description').value;
       const securityPin = document.getElementById('transfer-pin').value;
 
@@ -343,13 +371,13 @@ function setupForms() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${Auth.getToken()}`
           },
-          body: JSON.stringify({ fromAccount, toAccount, amount, description, securityPin })
+          body: JSON.stringify({ fromAccount, toAccount, amount, transferMode, recipientIfsc, description, securityPin })
         });
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Transfer failed');
 
-        Toast.success(`Transferred ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to #${toAccount} successfully! [Ref: ${data.referenceNumber}]`);
+        Toast.success(`[${transferMode}] Transferred ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} successfully! Ref: ${data.referenceNumber}`);
         closeModal('modal-transfer');
         transferForm.reset();
         loadCustomerOverview();
@@ -416,6 +444,39 @@ function setupForms() {
         Toast.success(`Withdrawal of ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} successful! [Ref: ${data.referenceNumber}]`);
         closeModal('modal-withdraw');
         withdrawForm.reset();
+        loadCustomerOverview();
+      } catch (err) {
+        Toast.error(err.message);
+      }
+    });
+  }
+
+  // Open New Account Form
+  const openAccForm = document.getElementById('open-new-account-form');
+  if (openAccForm) {
+    openAccForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const accountType = document.getElementById('newacc-type').value;
+      const initialDeposit = parseFloat(document.getElementById('newacc-deposit').value);
+      const extra1 = document.getElementById('newacc-extra1')?.value || '';
+      const extra2 = document.getElementById('newacc-extra2')?.value || '';
+
+      try {
+        const res = await fetch('/api/customer/accounts/open', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: JSON.stringify({ accountType, initialDeposit, extra1, extra2 })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Account opening failed');
+
+        Toast.success(`Opened new ${accountType} account #${data.accountNumber} successfully! (IFSC: ${data.ifscCode})`);
+        closeModal('modal-open-account');
+        openAccForm.reset();
         loadCustomerOverview();
       } catch (err) {
         Toast.error(err.message);
@@ -622,7 +683,7 @@ function exportTransactionsCSV() {
   })
   .then(res => res.json())
   .then(txs => {
-    let csv = 'Transaction ID,Date & Time,Type,Description,From Account,To Account,Amount,Status,Reference\n';
+    let csv = 'Transaction ID,Date & Time,Type,Description,From Account,To Account,Amount (INR),Status,Reference\n';
     txs.forEach(t => {
       csv += `"${t.id}","${t.timestamp}","${t.type}","${(t.description||'').replace(/"/g, '""')}","${t.fromAccount}","${t.toAccount}","${t.amount}","${t.status}","${t.referenceNumber}"\n`;
     });
@@ -631,8 +692,8 @@ function exportTransactionsCSV() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `bank_statement_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `nova_bank_statement_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
-    Toast.success('Statement exported to CSV!');
+    Toast.success('Statement exported to CSV successfully!');
   });
 }

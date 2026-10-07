@@ -3,232 +3,228 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Banking Portal | NovaCore Bank</title>
+  <title>Customer NetBanking | NovaCore Bank of India</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
 
-  <div class="app-container">
+  <div class="dashboard-layout">
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v4M12 14v4M16 14v4"/>
           </svg>
         </div>
-        <span style="font-weight: 800; font-size: 1.15rem; color: #fff;">NovaCore<span style="color: var(--primary);">Bank</span></span>
+        <div class="sidebar-brand">
+          <span>NovaCore</span>
+          <span class="sub-brand">Bank of India</span>
+        </div>
+      </div>
+
+      <div class="user-profile-badge">
+        <div class="user-avatar" id="user-avatar-text">U</div>
+        <div class="user-info-text">
+          <div class="user-name" id="nav-user-name">Loading...</div>
+          <div class="user-role">Retail NetBanking</div>
+        </div>
       </div>
 
       <ul class="sidebar-menu">
         <li class="nav-item active" data-tab="tab-overview">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span>Account Overview</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Dashboard Overview</span>
         </li>
         <li class="nav-item" data-tab="tab-transactions">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <span>Transaction History</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Passbook & History</span>
         </li>
         <li class="nav-item" data-tab="tab-services">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>Loans & Investments</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Loans & Wealth Portfolios</span>
         </li>
         <li class="nav-item" data-tab="tab-profile">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Profile & Security</span>
+          <span>KYC Profile & Security</span>
         </li>
       </ul>
 
       <div class="sidebar-footer">
-        <div style="font-size: 0.75rem; color: var(--text-dim);">
-          Session Active<br><strong>Core Java 25</strong>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">Logout</button>
+        <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="Auth.logout()">Sign Out</button>
       </div>
     </aside>
 
-    <!-- Main Wrapper -->
+    <!-- Main Content Area -->
     <div class="main-wrapper">
       <!-- Topbar -->
       <header class="topbar">
-        <div class="topbar-left">
-          <h2 id="topbar-title">Account Overview</h2>
+        <div class="topbar-title-section">
+          <h2 id="topbar-title">Dashboard Overview</h2>
+          <span class="badge badge-primary" style="font-size: 0.75rem;">IFSC: NOVA0001001</span>
         </div>
-        <div class="topbar-right">
-          <div class="user-profile-badge">
-            <div class="user-avatar" id="user-avatar-text">U</div>
-            <span id="nav-user-name" style="font-size: 0.9rem; font-weight: 600;">Customer</span>
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="openModal('modal-transfer')">⚡ Send Money</button>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-transfer')">⚡ Send Money (UPI / IMPS)</button>
+          <button class="btn btn-secondary btn-sm" onclick="openModal('modal-deposit')">📥 Deposit</button>
+          <button class="btn btn-secondary btn-sm" onclick="openModal('modal-withdraw')">🏧 Withdraw</button>
+          <button class="btn btn-secondary btn-sm" onclick="openModal('modal-open-account')">➕ New Account</button>
         </div>
       </header>
 
-      <!-- Content Area -->
-      <main class="content-area">
+      <!-- Dashboard Content -->
+      <main class="dashboard-content">
 
         <!-- TAB 1: OVERVIEW -->
         <div class="tab-content active" id="tab-overview">
-          <!-- Stat Grid -->
-          <div class="stat-grid">
-            <div class="glass-card stat-card">
-              <div class="stat-icon primary">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><circle cx="18" cy="12" r="2"/></svg>
-              </div>
-              <div>
-                <div class="stat-title">Total Net Balance</div>
-                <div class="stat-value" id="stat-total-balance">₹0.00</div>
-              </div>
+          <!-- Overview Metric Cards -->
+          <div class="metrics-grid">
+            <div class="metric-card glass-card">
+              <div class="metric-label">Total Liquid Balance</div>
+              <div class="metric-value" id="stat-total-balance">₹0.00</div>
+              <div class="metric-subtext" style="color: var(--success);">● Active Accounts in Vault</div>
             </div>
 
-            <div class="glass-card stat-card">
-              <div class="stat-icon success">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-              </div>
-              <div>
-                <div class="stat-title">Total Inflow</div>
-                <div class="stat-value" id="stat-total-inflow" style="color: var(--success);">₹0.00</div>
-              </div>
+            <div class="metric-card glass-card">
+              <div class="metric-label">Total Inflow (Credits)</div>
+              <div class="metric-value" style="color: var(--success);" id="stat-total-inflow">+₹0.00</div>
+              <div class="metric-subtext">Deposits & UPI Credits</div>
             </div>
 
-            <div class="glass-card stat-card">
-              <div class="stat-icon danger">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-              </div>
-              <div>
-                <div class="stat-title">Total Outflow</div>
-                <div class="stat-value" id="stat-total-outflow">₹0.00</div>
-              </div>
+            <div class="metric-card glass-card">
+              <div class="metric-label">Total Outflow (Debits)</div>
+              <div class="metric-value" style="color: var(--danger);" id="stat-total-outflow">-₹0.00</div>
+              <div class="metric-subtext">Transfers & Cash Withdrawals</div>
             </div>
 
-            <div class="glass-card stat-card">
-              <div class="stat-icon info">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-              </div>
-              <div>
-                <div class="stat-title">Linked Accounts</div>
-                <div class="stat-value" id="stat-active-accounts">1</div>
-              </div>
+            <div class="metric-card glass-card">
+              <div class="metric-label">Active Bank Accounts</div>
+              <div class="metric-value" id="stat-active-accounts">0</div>
+              <div class="metric-subtext">Savings / Current / Student</div>
             </div>
           </div>
 
-          <!-- Quick Actions Grid -->
-          <div style="margin-bottom: 28px;">
-            <div class="quick-actions-grid">
-              <div class="quick-action-btn" onclick="openModal('modal-transfer')">
-                <span style="font-size: 1.5rem;">💸</span>
-                <span>Send Money</span>
-              </div>
-              <div class="quick-action-btn" onclick="openModal('modal-deposit')">
-                <span style="font-size: 1.5rem;">📥</span>
-                <span>Deposit Funds</span>
-              </div>
-              <div class="quick-action-btn" onclick="openModal('modal-withdraw')">
-                <span style="font-size: 1.5rem;">🏧</span>
-                <span>Cash Withdraw</span>
-              </div>
-              <div class="quick-action-btn" onclick="document.querySelector('[data-tab=\'tab-services\']').click()">
-                <span style="font-size: 1.5rem;">📑</span>
-                <span>Apply Loan</span>
-              </div>
-              <div class="quick-action-btn" onclick="openModal('modal-invest')">
-                <span style="font-size: 1.5rem;">💎</span>
-                <span>Book Investment</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Accounts & Virtual Card Layout -->
-          <div class="grid-3col" style="margin-bottom: 28px;">
-            <div>
-              <h3 style="margin-bottom: 16px;">Your Bank Accounts</h3>
-              <div id="accounts-cards-container" style="display: flex; flex-direction: column; gap: 16px;">
-                <!-- Dynamically rendered -->
-              </div>
-            </div>
-
-            <!-- Virtual Card Panel -->
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3>Virtual Debit Card</h3>
+          <!-- Virtual Debit Card & Quick Actions Section -->
+          <div class="grid-2col" style="margin-bottom: 24px;">
+            <!-- Virtual Debit Card -->
+            <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 1.1rem;">Virtual RuPay Debit Card</h3>
                 <button id="btn-freeze-card" class="btn btn-danger btn-sm" onclick="togglePrimaryCardFreeze()">🔒 Freeze Card</button>
               </div>
-              <div class="virtual-card" id="primary-virtual-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div class="card-chip"></div>
-                  <span style="font-weight: 800; letter-spacing: 1px; font-size: 1.1rem;">VISA</span>
+
+              <!-- Styled Virtual Card Container -->
+              <div class="debit-card" id="primary-virtual-card">
+                <div class="card-chip"></div>
+                <div class="card-logo">RuPay / Debit</div>
+                <div class="card-number" id="card-number-display">6080 •••• •••• 9012</div>
+                <div class="card-footer">
+                  <div>
+                    <div class="card-label">CARD HOLDER</div>
+                    <div class="card-val" id="card-holder-display">CUSTOMER NAME</div>
+                  </div>
+                  <div>
+                    <div class="card-label">EXPIRES</div>
+                    <div class="card-val" id="card-expiry-display">10/29</div>
+                  </div>
+                  <div>
+                    <div class="card-label">CVV</div>
+                    <div class="card-val" id="card-cvv-display">•••</div>
+                  </div>
                 </div>
-                <div class="card-number" id="card-number-display">•••• •••• •••• ••••</div>
-                <div class="card-details">
-                  <div>
-                    <div style="font-size: 0.65rem; opacity: 0.7;">CARD HOLDER</div>
-                    <div id="card-holder-display" style="font-weight: 700;">CUSTOMER</div>
-                  </div>
-                  <div>
-                    <div style="font-size: 0.65rem; opacity: 0.7;">EXPIRES</div>
-                    <div id="card-expiry-display" style="font-weight: 700;">12/28</div>
-                  </div>
-                  <div>
-                    <div style="font-size: 0.65rem; opacity: 0.7;">CVV</div>
-                    <div id="card-cvv-display" style="font-weight: 700;">•••</div>
-                  </div>
+              </div>
+            </div>
+
+            <!-- Quick Action Hub -->
+            <div class="glass-card">
+              <h3 style="margin-bottom: 16px;">Quick Financial Services</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="quick-action-box" onclick="openModal('modal-transfer')">
+                  <div class="qa-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);">⚡</div>
+                  <strong>UPI / IMPS Transfer</strong>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Instant 24x7 payment</p>
+                </div>
+                <div class="quick-action-box" onclick="openModal('modal-deposit')">
+                  <div class="qa-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">📥</div>
+                  <strong>Deposit Money</strong>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">UPI & Cash credit</p>
+                </div>
+                <div class="quick-action-box" onclick="openModal('modal-withdraw')">
+                  <div class="qa-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);">🏧</div>
+                  <strong>Cash Withdrawal</strong>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">ATM / Branch cash</p>
+                </div>
+                <div class="quick-action-box" onclick="openModal('modal-invest')">
+                  <div class="qa-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--secondary);">💎</div>
+                  <strong>Fixed Deposit (FD)</strong>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">7.5% p.a. guaranteed</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Recent Activity -->
+          <!-- Accounts Showcase Cards -->
+          <h3 style="margin-bottom: 14px;">Your Indian Bank Accounts</h3>
+          <div class="grid-2col" id="accounts-cards-container" style="margin-bottom: 30px;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Recent Transactions -->
           <div class="glass-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-              <h3>Recent Account Activity</h3>
-              <button class="btn btn-secondary btn-sm" onclick="document.querySelector('[data-tab=\'tab-transactions\']').click()">View All Transactions →</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3>Recent Passbook Transactions</h3>
+              <button class="btn btn-secondary btn-sm" onclick="document.querySelector('[data-tab=tab-transactions]').click()">View All</button>
             </div>
-            <div id="recent-transactions-list">
+            <div class="transactions-list" id="recent-transactions-list">
               <!-- Dynamically populated -->
             </div>
           </div>
         </div>
 
-        <!-- TAB 2: TRANSACTIONS -->
+        <!-- TAB 2: TRANSACTIONS PASSBOOK -->
         <div class="tab-content" id="tab-transactions">
-          <div class="glass-card" style="margin-bottom: 20px;">
-            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-              <div style="display: flex; gap: 12px; flex: 1; min-width: 280px;">
-                <input type="text" id="search-tx-input" class="form-control" placeholder="Search by recipient, account # or reference..." oninput="loadCustomerTransactions()">
-                <select id="filter-tx-type" class="form-control" style="max-width: 180px;" onchange="loadCustomerTransactions()">
-                  <option value="ALL">All Types</option>
-                  <option value="CREDIT">Credits (+)</option>
-                  <option value="DEBIT">Debits (-)</option>
-                  <option value="DEPOSIT">Deposits</option>
-                  <option value="WITHDRAWAL">Withdrawals</option>
-                  <option value="TRANSFER_OUT">Transfers Out</option>
-                  <option value="TRANSFER_IN">Transfers In</option>
-                </select>
-              </div>
-              <button class="btn btn-secondary" onclick="exportTransactionsCSV()">📥 Download CSV Statement</button>
-            </div>
-          </div>
-
           <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+              <div>
+                <h3>Account Passbook & Transaction Ledger</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Filter and audit historical deposits, transfers, and withdrawals.</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="exportTransactionsCSV()">📥 Download CSV Statement</button>
+            </div>
+
+            <!-- Filter Controls -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+              <input type="text" id="tx-search-input" class="form-control" style="max-width: 260px;" placeholder="Search description, reference, account..." oninput="loadCustomerTransactions()">
+              <select id="tx-type-filter" class="form-control" style="max-width: 180px;" onchange="loadCustomerTransactions()">
+                <option value="ALL">All Transaction Types</option>
+                <option value="CREDIT">Credits Only (+)</option>
+                <option value="DEBIT">Debits Only (-)</option>
+                <option value="DEPOSIT">Direct Deposits</option>
+                <option value="TRANSFER_IN">UPI / Transfers In</option>
+                <option value="TRANSFER_OUT">UPI / Transfers Out</option>
+                <option value="WITHDRAWAL">ATM Withdrawals</option>
+                <option value="LOAN_EMI">Loan EMI Payments</option>
+              </select>
+            </div>
+
             <div class="table-container">
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Reference / ID</th>
-                    <th>Date & Time</th>
+                    <th>Timestamp</th>
                     <th>Type</th>
                     <th>Description</th>
-                    <th>Route</th>
-                    <th>Amount</th>
+                    <th>From / To</th>
+                    <th>Reference</th>
+                    <th>Amount (₹)</th>
                     <th>Status</th>
                   </tr>
                 </thead>
-                <tbody id="full-transactions-table-body">
-                  <!-- Populated dynamically -->
+                <tbody id="all-transactions-table-body">
+                  <!-- Dynamically populated -->
                 </tbody>
               </table>
             </div>
@@ -237,62 +233,63 @@
 
         <!-- TAB 3: SERVICES (LOANS & INVESTMENTS) -->
         <div class="tab-content" id="tab-services">
-          <!-- Loan Application & EMI Calculator -->
-          <div class="grid-2col" style="margin-bottom: 30px;">
-            <!-- EMI Calculator -->
-            <div class="glass-card">
-              <h3 style="margin-bottom: 8px;">Interactive Loan Calculator</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Calculate your monthly EMI and interest schedule before applying.</p>
+          <!-- Loan EMI Calculator -->
+          <div class="glass-card" style="margin-bottom: 30px;">
+            <h3 style="margin-bottom: 8px;">Dynamic Loan Application & EMI Calculator</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Calculate monthly EMIs across Home, Education, and Personal Loans.</p>
 
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                  <label class="form-label">Loan Amount</label>
-                  <span id="display-calc-amount" style="font-weight: 700; color: var(--primary);">₹10,000</span>
-                </div>
-                <input type="range" id="calc-loan-amount" min="1000" max="250000" step="1000" value="10000" style="width: 100%;">
+            <div class="grid-2col">
+              <div>
+                <form id="apply-loan-form">
+                  <div class="form-group">
+                    <label class="form-label">Loan Product</label>
+                    <select id="loan-type-select" class="form-control">
+                      <option value="HOME">Home Loan (8.4% p.a.)</option>
+                      <option value="EDUCATION">Education Loan (7.2% p.a.)</option>
+                      <option value="PERSONAL">Personal Loan (10.5% p.a.)</option>
+                      <option value="BUSINESS">Business MSME Loan (9.5% p.a.)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Loan Amount (₹): <strong id="display-calc-amount" style="color: var(--primary);">₹5,00,000</strong></label>
+                    <input type="range" id="calc-loan-amount" min="50000" max="10000000" step="50000" value="500000" style="width: 100%;">
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Tenure: <strong id="display-calc-months" style="color: var(--secondary);">60 Months</strong></label>
+                    <input type="range" id="calc-loan-months" min="6" max="240" step="6" value="60" style="width: 100%;">
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Specific Purpose / Notes</label>
+                    <input type="text" id="loan-purpose-input" class="form-control" placeholder="e.g. Higher Education Degree, Residential Flat" required>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Submit Loan Application</button>
+                </form>
               </div>
 
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                  <label class="form-label">Tenure (Months)</label>
-                  <span id="display-calc-months" style="font-weight: 700; color: var(--primary);">24 Months</span>
+              <!-- EMI Summary Card -->
+              <div style="background: var(--bg-input); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: center;">
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">Estimated Monthly Installment (EMI)</div>
+                <div id="display-calc-emi" style="font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 16px;">₹0.00</div>
+
+                <div style="border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 10px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem;">
+                    <span style="color: var(--text-muted);">Total Principal:</span>
+                    <strong id="display-calc-principal">₹5,00,000.00</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem;">
+                    <span style="color: var(--text-muted);">Total Interest Payable:</span>
+                    <strong id="display-calc-interest" style="color: var(--secondary);">₹0.00</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.95rem; border-top: 1px solid var(--border-color); padding-top: 6px; margin-top: 6px;">
+                    <span>Total Amount Payable:</span>
+                    <strong id="display-calc-total">₹0.00</strong>
+                  </div>
                 </div>
-                <input type="range" id="calc-loan-months" min="6" max="120" step="6" value="24" style="width: 100%;">
               </div>
-
-              <div style="background: var(--bg-input); padding: 18px; border-radius: var(--radius-sm); margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Estimated Monthly EMI</div>
-                  <div id="display-calc-emi" style="font-size: 1.4rem; font-weight: 800; color: var(--success);">₹454.56</div>
-                </div>
-                <div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Total Repayment</div>
-                  <div id="display-calc-total" style="font-size: 1.4rem; font-weight: 800; color: #fff;">₹10,909.44</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Apply Loan Form -->
-            <div class="glass-card">
-              <h3 style="margin-bottom: 8px;">Apply for a New Loan</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Instant loan processing evaluated directly by bank administration.</p>
-
-              <form id="apply-loan-form">
-                <div class="form-group">
-                  <label class="form-label">Select Loan Category</label>
-                  <select id="loan-type-select" class="form-control">
-                    <option value="PERSONAL">Personal Loan (8.5% p.a.)</option>
-                    <option value="HOME">Home Mortgage Loan (7.5% p.a.)</option>
-                    <option value="EDUCATION">Student Education Loan (6.8% p.a.)</option>
-                    <option value="BUSINESS">Business Expansion Loan (9.0% p.a.)</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Application Purpose / Note</label>
-                  <input type="text" id="loan-purpose-input" class="form-control" placeholder="e.g. Higher studies tuition / Home remodeling" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Submit Loan Application</button>
-              </form>
             </div>
           </div>
 
@@ -323,9 +320,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
               <div>
                 <h3>Wealth & Investment Portfolios</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">High-yield Fixed Deposits, Sovereign Gold, and Index Funds.</p>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">High-yield Fixed Deposits, Sovereign Gold Bonds, and Nifty Index Funds.</p>
               </div>
-              <button class="btn btn-primary btn-sm" onclick="openModal('modal-invest')">+ Create Investment</button>
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-invest')">+ Book Investment</button>
             </div>
             <div class="table-container">
               <table class="custom-table">
@@ -350,8 +347,8 @@
         <!-- TAB 4: PROFILE & SECURITY -->
         <div class="tab-content" id="tab-profile">
           <div class="glass-card" style="max-width: 700px; margin: 0 auto;">
-            <h3 style="margin-bottom: 8px;">Personal Information & Security Settings</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px;">Manage contact details, login credentials, and transaction authorization PIN.</p>
+            <h3 style="margin-bottom: 8px;">Indian KYC Information & Security Settings</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px;">Manage PAN, Aadhaar, UPI handle, login credentials, and transaction authorization PIN.</p>
 
             <form id="customer-profile-form">
               <div class="grid-2col">
@@ -367,11 +364,11 @@
 
               <div class="grid-2col">
                 <div class="form-group">
-                  <label class="form-label">Contact Phone</label>
+                  <label class="form-label">Contact Phone (+91)</label>
                   <input type="text" id="profile-phone" class="form-control">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">4-Digit Security PIN (For Transfers)</label>
+                  <label class="form-label">4-Digit UPI / Security PIN</label>
                   <input type="password" id="profile-pin" class="form-control" maxlength="4" placeholder="••••">
                 </div>
               </div>
@@ -408,17 +405,32 @@
   <div class="modal-backdrop" id="modal-transfer">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>⚡ Instant Money Transfer</h3>
+        <h3>⚡ Instant Money Transfer (UPI / IMPS / NEFT / RTGS)</h3>
         <button class="modal-close" onclick="closeModal('modal-transfer')">&times;</button>
       </div>
       <form id="transfer-funds-form">
         <div class="form-group">
-          <label class="form-label">From Account</label>
+          <label class="form-label">Debit Source Account</label>
           <select id="transfer-from-account" class="form-control"></select>
         </div>
+        <div class="grid-2col">
+          <div class="form-group">
+            <label class="form-label">Transfer Protocol</label>
+            <select id="transfer-mode" class="form-control">
+              <option value="UPI">UPI (Instant 24x7)</option>
+              <option value="IMPS" selected>IMPS (Immediate Real-Time)</option>
+              <option value="NEFT">NEFT (National Electronic)</option>
+              <option value="RTGS">RTGS (High Value >= ₹2,00,000)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Recipient IFSC Code</label>
+            <input type="text" id="transfer-ifsc" class="form-control" value="NOVA0001001" placeholder="NOVA0001001">
+          </div>
+        </div>
         <div class="form-group">
-          <label class="form-label">Recipient Account Number *</label>
-          <input type="text" id="transfer-to-account" class="form-control" placeholder="e.g. 10010003" required>
+          <label class="form-label">Recipient Account Number / UPI ID *</label>
+          <input type="text" id="transfer-to-account" class="form-control" placeholder="e.g. 10010003003 or priya@novabank" required>
         </div>
         <div class="form-group">
           <label class="form-label">Amount (₹) *</label>
@@ -426,10 +438,10 @@
         </div>
         <div class="form-group">
           <label class="form-label">Description / Remarks</label>
-          <input type="text" id="transfer-description" class="form-control" placeholder="e.g. Rent, Freelance Payment">
+          <input type="text" id="transfer-description" class="form-control" placeholder="e.g. Consulting, Rent, UPI Payment">
         </div>
         <div class="form-group">
-          <label class="form-label">4-Digit Security PIN</label>
+          <label class="form-label">4-Digit Security / UPI PIN</label>
           <input type="password" id="transfer-pin" class="form-control" maxlength="4" placeholder="••••">
         </div>
         <div style="display: flex; gap: 10px; margin-top: 24px;">
@@ -458,7 +470,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Deposit Source / Note</label>
-          <input type="text" id="deposit-description" class="form-control" placeholder="e.g. Salary, Cash Counter Deposit">
+          <input type="text" id="deposit-description" class="form-control" placeholder="e.g. Monthly Salary, Cash Counter Deposit">
         </div>
         <div style="display: flex; gap: 10px; margin-top: 24px;">
           <button type="submit" class="btn btn-success" style="flex: 1;">Confirm Deposit</button>
@@ -472,7 +484,7 @@
   <div class="modal-backdrop" id="modal-withdraw">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>🏧 Cash Withdrawal</h3>
+        <h3>🏧 Cash / ATM Withdrawal</h3>
         <button class="modal-close" onclick="closeModal('modal-withdraw')">&times;</button>
       </div>
       <form id="withdraw-funds-form">
@@ -486,11 +498,49 @@
         </div>
         <div class="form-group">
           <label class="form-label">Reason / ATM Location</label>
-          <input type="text" id="withdraw-description" class="form-control" placeholder="e.g. ATM Downtown Branch">
+          <input type="text" id="withdraw-description" class="form-control" placeholder="e.g. ATM Mumbai Fort Branch">
         </div>
         <div style="display: flex; gap: 10px; margin-top: 24px;">
           <button type="submit" class="btn btn-danger" style="flex: 1;">Confirm Withdrawal</button>
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-withdraw')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: OPEN NEW ACCOUNT -->
+  <div class="modal-backdrop" id="modal-open-account">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>➕ Open Additional Bank Account</h3>
+        <button class="modal-close" onclick="closeModal('modal-open-account')">&times;</button>
+      </div>
+      <form id="open-new-account-form">
+        <div class="form-group">
+          <label class="form-label">Account Scheme</label>
+          <select id="newacc-type" class="form-control" onchange="toggleNewAccFields(this.value)">
+            <option value="SAVINGS">Savings Account (4.0% p.a. • Min ₹1,000)</option>
+            <option value="CURRENT">Current Account (Business/GSTIN • Min ₹5,000)</option>
+            <option value="STUDENT">Student Account (University ID • Zero Balance)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Initial Opening Deposit (₹)</label>
+          <input type="number" id="newacc-deposit" class="form-control" value="2000" min="100" step="500" required>
+        </div>
+        <div id="newacc-extra-container" style="display: none;">
+          <div class="form-group">
+            <label id="lbl-newacc-extra1" class="form-label">GSTIN / Trade License</label>
+            <input type="text" id="newacc-extra1" class="form-control" placeholder="27AAAPA1234B1Z5">
+          </div>
+          <div class="form-group">
+            <label id="lbl-newacc-extra2" class="form-label">Business / Student ID</label>
+            <input type="text" id="newacc-extra2" class="form-control" placeholder="Enterprise Name">
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Open Account Now</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-open-account')">Cancel</button>
         </div>
       </form>
     </div>
@@ -534,19 +584,19 @@
         <div class="form-group">
           <label class="form-label">Investment Instrument</label>
           <select id="invest-type-select" class="form-control">
-            <option value="FIXED_DEPOSIT">Fixed Deposit (7.25% p.a. Guaranteed)</option>
-            <option value="MUTUAL_FUND">Index Mutual Fund (11.5% p.a. Growth)</option>
-            <option value="GOLD_BOND">Sovereign Gold Bond (7.0% p.a. + Gold Appreciation)</option>
+            <option value="FIXED_DEPOSIT">Fixed Deposit (7.5% p.a. Guaranteed)</option>
+            <option value="MUTUAL_FUND">Nifty Index Mutual Fund (12.5% p.a. Growth)</option>
+            <option value="GOLD_BOND">RBI Sovereign Gold Bond (6.5% p.a. + Gold Value)</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Portfolio Title / Name</label>
-          <input type="text" id="invest-name-input" class="form-control" placeholder="e.g. Retirement 2030 Nest Egg" required>
+          <input type="text" id="invest-name-input" class="form-control" placeholder="e.g. Retirement Shrestha 2030" required>
         </div>
         <div class="grid-2col">
           <div class="form-group">
             <label class="form-label">Principal Amount (₹)</label>
-            <input type="number" id="invest-amount-input" class="form-control" value="10000" min="500" step="500" required>
+            <input type="number" id="invest-amount-input" class="form-control" value="25000" min="500" step="500" required>
           </div>
           <div class="form-group">
             <label class="form-label">Tenure</label>
@@ -592,5 +642,33 @@
   <script src="js/toast.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/customer.js"></script>
+  <script>
+    function toggleNewAccFields(val) {
+      const container = document.getElementById('newacc-extra-container');
+      const lbl1 = document.getElementById('lbl-newacc-extra1');
+      const lbl2 = document.getElementById('lbl-newacc-extra2');
+      const in1 = document.getElementById('newacc-extra1');
+      const in2 = document.getElementById('newacc-extra2');
+
+      if (val === 'CURRENT') {
+        container.style.display = 'block';
+        lbl1.innerText = 'GSTIN / Trade License:';
+        in1.placeholder = '27AAAPA1234B1Z5';
+        lbl2.innerText = 'Business Enterprise Name:';
+        in2.placeholder = 'Apex Commercial LLP';
+        document.getElementById('newacc-deposit').value = '5000';
+      } else if (val === 'STUDENT') {
+        container.style.display = 'block';
+        lbl1.innerText = 'Institution / University:';
+        in1.placeholder = 'IIT Bombay / Delhi University';
+        lbl2.innerText = 'Student Roll / ID Number:';
+        in2.placeholder = 'STU-2026-9021';
+        document.getElementById('newacc-deposit').value = '500';
+      } else {
+        container.style.display = 'none';
+        document.getElementById('newacc-deposit').value = '2000';
+      }
+    }
+  </script>
 </body>
 </html>

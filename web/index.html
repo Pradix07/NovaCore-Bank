@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NovaCore Bank | Next-Gen Online Banking System</title>
+  <title>NovaCore Bank of India | Digital Banking Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,52 +20,52 @@
           <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v4M12 14v4M16 14v4"/>
         </svg>
       </div>
-      <span>NovaCore<span style="color: var(--primary);">Bank</span></span>
+      <span>NovaCore<span style="color: var(--primary);"> Bank of India</span></span>
     </div>
     <div style="display: flex; gap: 12px;">
       <button class="btn btn-secondary" onclick="openModal('modal-login')">Sign In</button>
-      <button class="btn btn-primary" onclick="openModal('modal-register')">Open Account</button>
+      <button class="btn btn-primary" onclick="openModal('modal-register')">Open Indian Bank Account</button>
     </div>
   </nav>
 
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-pill">
-      <span>🚀 Core Java 25 Powered Web Banking Platform</span>
+      <span>🚀 Core Java Backend • Reserve Bank of India (RBI) Compliant</span>
     </div>
-    <h1 class="hero-title">Experience Intelligent & Secure Digital Banking</h1>
+    <h1 class="hero-title">Intelligent & Secure Digital Banking for India</h1>
     <p class="hero-desc">
-      Empower your financial journey with high-speed fund transfers, multi-account management, custom loan services, wealth investments, and real-time administrative intelligence.
+      Empower your financial journey with instant UPI, IMPS, NEFT, and RTGS transfers, specialized Savings, Current (GST), and Student Accounts, fixed deposits, loan underwriting, and thread-safe core Java ledger operations.
     </p>
 
     <div class="hero-cta">
-      <button class="btn btn-primary btn-lg" onclick="openModal('modal-login')">Access Portal</button>
-      <button class="btn btn-secondary btn-lg" onclick="openModal('modal-register')">Register as New Customer</button>
+      <button class="btn btn-primary btn-lg" onclick="openModal('modal-login')">Access NetBanking Portal</button>
+      <button class="btn btn-secondary btn-lg" onclick="openModal('modal-register')">Register New Indian Customer</button>
     </div>
 
     <!-- Quick Demo Accounts One-Click Login -->
     <div class="demo-accounts-card">
       <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
         <span style="font-size: 0.85rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em;">
-          ⚡ Instant Evaluator Demo Logins (One-Click)
+          ⚡ Instant Evaluator Demo Logins (1-Click Fill)
         </span>
-        <span class="badge badge-primary">College Project Ready</span>
+        <span class="badge badge-primary">IFSC: NOVA0001001</span>
       </div>
       <div class="demo-accounts-grid">
         <div class="demo-pill" onclick="quickLogin('admin', 'admin123')">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
             <span class="badge badge-primary" style="font-size: 0.65rem;">ADMIN</span>
-            <strong style="color: #fff; font-size: 0.9rem;">Dr. Vance</strong>
+            <strong style="color: #fff; font-size: 0.9rem;">Rajesh Sharma</strong>
           </div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">User: <code>admin</code> • Pass: <code>admin123</code></div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Chief Branch Manager • <code>admin</code></div>
         </div>
 
-        <div class="demo-pill" onclick="quickLogin('alex.morgan', 'customer123')">
+        <div class="demo-pill" onclick="quickLogin('aarav.patel', 'customer123')">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
             <span class="badge badge-success" style="font-size: 0.65rem;">CUSTOMER</span>
-            <strong style="color: #fff; font-size: 0.9rem;">Alex Morgan</strong>
+            <strong style="color: #fff; font-size: 0.9rem;">Aarav Patel</strong>
           </div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">Savings & Checking (₹34,960)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Savings & Current (₹2,24,500)</div>
         </div>
 
         <div class="demo-pill" onclick="quickLogin('priya.sharma', 'customer123')">
@@ -73,7 +73,15 @@
             <span class="badge badge-info" style="font-size: 0.65rem;">CUSTOMER</span>
             <strong style="color: #fff; font-size: 0.9rem;">Priya Sharma</strong>
           </div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">Savings & Gold Bond (₹14,750)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Savings & SGB Gold (₹58,250)</div>
+        </div>
+
+        <div class="demo-pill" onclick="quickLogin('rohan.verma', 'customer123')">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="badge badge-warning" style="font-size: 0.65rem;">STUDENT</span>
+            <strong style="color: #fff; font-size: 0.9rem;">Rohan Verma</strong>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">IIT Delhi Student Acc (₹18,450)</div>
         </div>
       </div>
     </div>
@@ -81,111 +89,132 @@
     <!-- Features Showcase Grid -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; text-align: left; margin-top: 40px;">
       <div class="glass-card">
-        <div style="font-size: 2rem; margin-bottom: 12px;">💸</div>
-        <h3 style="margin-bottom: 8px;">Atomic Transfers</h3>
-        <p style="color: var(--text-muted); font-size: 0.88rem;">Concurrent multi-threaded fund transactions with thread-safe account locks and instant ledger reconciliation.</p>
+        <div style="font-size: 2rem; margin-bottom: 12px;">⚡</div>
+        <h3 style="margin-bottom: 8px;">Indian Payment Rails</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">Seamless transfers via UPI ID, IMPS 24x7 instant credit, NEFT batch processing, and RTGS high-value settlements.</p>
+      </div>
+
+      <div class="glass-card">
+        <div style="font-size: 2rem; margin-bottom: 12px;">🏦</div>
+        <h3 style="margin-bottom: 8px;">3-Tier Account Architecture</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">Savings Account (4% p.a.), Commercial Current Account (with GSTIN / Overdraft), and Student Concession Account (Zero Balance).</p>
       </div>
 
       <div class="glass-card">
         <div style="font-size: 2rem; margin-bottom: 12px;">📈</div>
-        <h3 style="margin-bottom: 8px;">Loans & Wealth</h3>
-        <p style="color: var(--text-muted); font-size: 0.88rem;">Real-time EMI formula calculation, one-click admin disbursal, fixed deposits, and mutual fund portfolios.</p>
+        <h3 style="margin-bottom: 8px;">Fixed Deposits & Loans</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">Fixed Deposits (7.5% p.a.), Sovereign Gold Bonds (SGB), Mutual Funds, Home & Education Loans with instant EMI calculation.</p>
       </div>
 
       <div class="glass-card">
         <div style="font-size: 2rem; margin-bottom: 12px;">🛡️</div>
-        <h3 style="margin-bottom: 8px;">Admin Intelligence</h3>
-        <p style="color: var(--text-muted); font-size: 0.88rem;">Full user lifecycle management, global transaction monitoring, system configuration, and audit logging.</p>
+        <h3 style="margin-bottom: 8px;">RBI Security & Auditing</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">PAN & Aadhaar KYC compliance, 4-digit UPI/ATM PIN validation, virtual RuPay card freeze, and immutable audit logs.</p>
       </div>
     </div>
   </section>
 
   <!-- Login Modal -->
-  <div class="modal-backdrop" id="modal-login">
-    <div class="modal-box">
+  <div id="modal-login" class="modal-backdrop" onclick="if(event.target===this) closeModal('modal-login')">
+    <div class="modal-box glass-card" style="max-width: 420px;">
       <div class="modal-header">
-        <h3>Sign In to NovaCore Bank</h3>
-        <button class="modal-close" onclick="closeModal('modal-login')">&times;</button>
+        <h2 style="font-size: 1.4rem;">Sign In to NetBanking</h2>
+        <button type="button" class="modal-close" onclick="closeModal('modal-login')">&times;</button>
       </div>
       <form id="login-form">
         <div class="form-group">
-          <label class="form-label">Username</label>
-          <input type="text" id="login-username" class="form-control" placeholder="Enter your username" required autocomplete="username">
+          <label class="form-label">Username / Client ID</label>
+          <input type="text" id="login-username" class="form-control" placeholder="e.g. aarav.patel or admin" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+          <label class="form-label">Password / Security Key</label>
+          <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required>
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 24px;">
-          <button type="submit" class="btn btn-primary" style="flex: 1;">Login</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-login')">Cancel</button>
-        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">Login Securely</button>
       </form>
     </div>
   </div>
 
   <!-- Register Modal -->
-  <div class="modal-backdrop" id="modal-register">
-    <div class="modal-box" style="max-width: 580px;">
+  <div id="modal-register" class="modal-backdrop" onclick="if(event.target===this) closeModal('modal-register')">
+    <div class="modal-box glass-card" style="max-width: 600px;">
       <div class="modal-header">
-        <h3>Open a New Customer Account</h3>
-        <button class="modal-close" onclick="closeModal('modal-register')">&times;</button>
+        <h2 style="font-size: 1.4rem;">Open Indian Bank Account (KYC Onboarding)</h2>
+        <button type="button" class="modal-close" onclick="closeModal('modal-register')">&times;</button>
       </div>
       <form id="register-form">
         <div class="grid-2col">
           <div class="form-group">
             <label class="form-label">Username *</label>
-            <input type="text" id="reg-username" class="form-control" placeholder="e.g. johndoe" required>
+            <input type="text" id="reg-username" class="form-control" placeholder="e.g. rohit.sharma" required>
           </div>
           <div class="form-group">
             <label class="form-label">Password *</label>
-            <input type="password" id="reg-password" class="form-control" placeholder="At least 6 characters" required>
+            <input type="password" id="reg-password" class="form-control" placeholder="Min 6 characters" required>
           </div>
         </div>
 
         <div class="grid-2col">
           <div class="form-group">
-            <label class="form-label">Full Name *</label>
-            <input type="text" id="reg-fullname" class="form-control" placeholder="e.g. Johnathan Doe" required>
+            <label class="form-label">Full Name (as per PAN/Aadhaar) *</label>
+            <input type="text" id="reg-fullname" class="form-control" placeholder="e.g. Rohit Sharma" required>
           </div>
           <div class="form-group">
             <label class="form-label">Email Address *</label>
-            <input type="email" id="reg-email" class="form-control" placeholder="john@example.com" required>
+            <input type="email" id="reg-email" class="form-control" placeholder="rohit@example.com" required>
           </div>
         </div>
 
         <div class="grid-2col">
           <div class="form-group">
-            <label class="form-label">Phone Number</label>
-            <input type="tel" id="reg-phone" class="form-control" placeholder="+91 98765 43210">
+            <label class="form-label">Mobile Number (+91) *</label>
+            <input type="tel" id="reg-phone" class="form-control" placeholder="+91 98765 43210" required>
           </div>
           <div class="form-group">
-            <label class="form-label">PAN Number</label>
-            <input type="text" id="reg-pan" class="form-control" placeholder="e.g. ABCDE1234F">
+            <label class="form-label">PAN Number *</label>
+            <input type="text" id="reg-pan" class="form-control" placeholder="e.g. ABCDE1234F" required>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Residential Address</label>
-          <input type="text" id="reg-address" class="form-control" placeholder="Flat/House No, Street, City, State, PIN">
         </div>
 
         <div class="grid-2col">
           <div class="form-group">
-            <label class="form-label">Initial Account Type</label>
-            <select id="reg-acctype" class="form-control">
-              <option value="SAVINGS">Savings Account (4.5% Interest)</option>
-              <option value="CHECKING">Checking Account (Overdraft Allowed)</option>
+            <label class="form-label">Aadhaar Number (12 digits) *</label>
+            <input type="text" id="reg-aadhaar" class="form-control" placeholder="XXXX-XXXX-9876" value="XXXX-XXXX-9876" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">City / State</label>
+            <input type="text" id="reg-address" class="form-control" placeholder="Mumbai, Maharashtra">
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="form-group">
+            <label class="form-label">Account Scheme</label>
+            <select id="reg-acctype" class="form-control" onchange="toggleAccountFields(this.value)">
+              <option value="SAVINGS">Savings Account (4.0% p.a. • Min ₹1,000)</option>
+              <option value="CURRENT">Current Account (Business/GSTIN • Min ₹5,000)</option>
+              <option value="STUDENT">Student Account (University ID • Zero Balance)</option>
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Initial Deposit (₹)</label>
-            <input type="number" id="reg-deposit" class="form-control" value="5000" min="500" step="500">
+            <input type="number" id="reg-deposit" class="form-control" value="2000" min="100" step="500">
+          </div>
+        </div>
+
+        <div id="dynamic-extra-fields" style="display: none;" class="grid-2col">
+          <div class="form-group">
+            <label id="lbl-extra1" class="form-label">GSTIN / Institution</label>
+            <input type="text" id="reg-extra1" class="form-control" placeholder="27AAAPA1234B1Z5">
+          </div>
+          <div class="form-group">
+            <label id="lbl-extra2" class="form-label">Business Name / Student ID</label>
+            <input type="text" id="reg-extra2" class="form-control" placeholder="Enterprise / Student ID">
           </div>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 24px;">
-          <button type="submit" class="btn btn-primary" style="flex: 1;">Create Account</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Complete KYC & Open Account</button>
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-register')">Cancel</button>
         </div>
       </form>
@@ -193,12 +222,39 @@
   </div>
 
   <footer style="text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid var(--border-color); margin-top: 60px;">
-    &copy; 2026 NovaCore Bank. Developed with Core Java Architecture & Embedded Multi-threaded HTTP Engine.
+    &copy; 2026 NovaCore Bank of India. Built with Core Java & RBI Compliant Digital Architecture.
   </footer>
 
   <script src="js/toast.js"></script>
   <script src="js/auth.js"></script>
   <script>
+    function toggleAccountFields(val) {
+      const container = document.getElementById('dynamic-extra-fields');
+      const lbl1 = document.getElementById('lbl-extra1');
+      const lbl2 = document.getElementById('lbl-extra2');
+      const in1 = document.getElementById('reg-extra1');
+      const in2 = document.getElementById('reg-extra2');
+
+      if (val === 'CURRENT') {
+        container.style.display = 'grid';
+        lbl1.innerText = 'GSTIN / Trade License:';
+        in1.placeholder = '27AAAPA1234B1Z5';
+        lbl2.innerText = 'Registered Entity / Business:';
+        in2.placeholder = 'Alpha Enterprises LLP';
+        document.getElementById('reg-deposit').value = '5000';
+      } else if (val === 'STUDENT') {
+        container.style.display = 'grid';
+        lbl1.innerText = 'Institution / University:';
+        in1.placeholder = 'IIT Bombay / Delhi University';
+        lbl2.innerText = 'Student Roll / ID Number:';
+        in2.placeholder = 'STU-2026-CS99';
+        document.getElementById('reg-deposit').value = '500';
+      } else {
+        container.style.display = 'none';
+        document.getElementById('reg-deposit').value = '2000';
+      }
+    }
+
     // Handle Login Form
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -207,7 +263,7 @@
 
       try {
         const user = await Auth.login(u, p);
-        Toast.success(`Welcome, ${user.fullName}!`);
+        Toast.success(`Welcome to NovaCore Bank of India, ${user.fullName}!`);
         setTimeout(() => {
           if (user.role === 'ADMIN') {
             window.location.href = '/admin-dashboard.html';
@@ -231,13 +287,16 @@
         phone: document.getElementById('reg-phone').value,
         address: document.getElementById('reg-address').value,
         panOrTaxId: document.getElementById('reg-pan').value,
+        aadhaarNumber: document.getElementById('reg-aadhaar').value,
         accountType: document.getElementById('reg-acctype').value,
-        initialDeposit: parseFloat(document.getElementById('reg-deposit').value)
+        initialDeposit: parseFloat(document.getElementById('reg-deposit').value),
+        extra1: document.getElementById('reg-extra1').value,
+        extra2: document.getElementById('reg-extra2').value
       };
 
       try {
         const user = await Auth.register(payload);
-        Toast.success('Account created successfully!');
+        Toast.success('Account successfully registered with NovaCore Bank of India!');
         setTimeout(() => {
           window.location.href = '/customer-dashboard.html';
         }, 600);

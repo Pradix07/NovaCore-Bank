@@ -12,11 +12,12 @@ import com.bank.service.interfaces.IAccountService;
 
 /**
  * ============================================================================
- * SERVICE: AccountService
+ * SERVICE: AccountService (Indian Banking System)
  * ============================================================================
  * Demonstrates:
  * - Interface Implementation (implements IAccountService)
- * - Object-Oriented Polymorphism (SavingsAccount, CheckingAccount)
+ * - Object-Oriented Polymorphism (SavingsAccount, CurrentAccount, StudentAccount, CheckingAccount)
+ * - Indian Banking Rules (INR Currency, IFSC Code NOVA0001001, PAN/GSTIN/Student Verification)
  * - Security & Access Control Validation
  */
 public class AccountService implements IAccountService {
@@ -103,41 +104,69 @@ public class AccountService implements IAccountService {
 
     @Override
     public Account openNewAccount(String customerId, String accountType, double initialDeposit) {
+        return openNewAccountDetailed(customerId, accountType, initialDeposit, null, null);
+    }
+
+    /**
+     * Enhanced detailed account opener supporting Indian Banking specific parameters.
+     */
+    public Account openNewAccountDetailed(String customerId, String accountType, double initialDeposit, String extra1, String extra2) {
         User user = dataStore.getUserById(customerId);
         if (user == null || !(user instanceof Customer)) {
-            throw new ValidationException("Invalid customer.");
+            throw new ValidationException("Invalid customer profile.");
         }
         Customer customer = (Customer) user;
 
-        if (initialDeposit < 100.0) {
-            throw new ValidationException("Minimum opening deposit is $100.00.");
+        String typeUpper = accountType != null ? accountType.toUpperCase().trim() : "SAVINGS";
+        double minReq = "STUDENT".equals(typeUpper) ? 100.0 : ("CURRENT".equals(typeUpper) ? 5000.0 : 1000.0);
+
+        if (initialDeposit < minReq) {
+            throw new ValidationException("Minimum opening deposit for " + typeUpper + " account is ₹" + String.format("%,.2f", minReq));
         }
 
-        String accType = "CHECKING".equalsIgnoreCase(accountType) ? "CHECKING" : "SAVINGS";
-        String accNum = SecurityUtil.generateAccountNumber(accType);
-
+        String accNum = SecurityUtil.generateAccountNumber(typeUpper);
         Account account;
-        if ("SAVINGS".equals(accType)) {
-            account = new SavingsAccount(accNum, customerId, initialDeposit, "INR", dataStore.getSystemSettings().getDefaultSavingsInterestRate(), dataStore.getSystemSettings().getMinSavingsBalance());
+
+        if ("CURRENT".equals(typeUpper)) {
+            String tradeLicenseOrGst = (extra1 != null && !extra1.trim().isEmpty()) ? extra1.trim() : "GSTIN-NOT-PROVIDED";
+            String businessName = (extra2 != null && !extra2.trim().isEmpty()) ? extra2.trim() : customer.getFullName() + " Enterprises";
+            account = new CurrentAccount(accNum, customerId, initialDeposit, "INR", tradeLicenseOrGst, businessName, 50000.0, 5000.0);
+            account.setBranchName("Mumbai Fort Main Branch");
+            account.setIfscCode("NOVA0001001");
+        } else if ("STUDENT".equals(typeUpper)) {
+            String institution = (extra1 != null && !extra1.trim().isEmpty()) ? extra1.trim() : "University / College";
+            String studentId = (extra2 != null && !extra2.trim().isEmpty()) ? extra2.trim() : "STU-" + ((int)(Math.random() * 9000) + 1000);
+            account = new StudentAccount(accNum, customerId, initialDeposit, "INR", institution, studentId, 0.035, 100.0, 100000.0, 20000.0);
+            account.setBranchName("New Delhi Connaught Place Branch");
+            account.setIfscCode("NOVA0003003");
+        } else if ("CHECKING".equals(typeUpper)) {
+            account = new CheckingAccount(accNum, customerId, initialDeposit, "INR", 25000.0);
+            account.setBranchName("Mumbai Fort Main Branch");
+            account.setIfscCode("NOVA0001001");
         } else {
-            account = new CheckingAccount(accNum, customerId, initialDeposit, "INR", 1000.0);
+            // Default: SAVINGS
+            typeUpper = "SAVINGS";
+            account = new SavingsAccount(accNum, customerId, initialDeposit, "INR", dataStore.getSystemSettings().getDefaultSavingsInterestRate(), dataStore.getSystemSettings().getMinSavingsBalance(), 50000.0);
+            account.setBranchName("Mumbai Fort Main Branch");
+            account.setIfscCode("NOVA0001001");
         }
 
         account.setCardNumber(SecurityUtil.generateCardNumber());
         account.setCardExpiry(SecurityUtil.generateCardExpiry());
         account.setCardCvv(SecurityUtil.generateCvv());
+        account.setUpiId(customer.getUsername() + "@novabank");
 
         customer.addAccountNumber(accNum);
         dataStore.addAccount(account);
 
-        // Transaction
+        // Record Opening Transaction
         Transaction tx = new Transaction(
                 SecurityUtil.generateId("TXN"),
                 TransactionType.DEPOSIT,
                 initialDeposit,
                 "INITIAL_OPENING_DEPOSIT",
                 accNum,
-                "New " + accType + " Account Creation",
+                "New " + typeUpper + " Account Initial Funding",
                 initialDeposit,
                 customerId,
                 SecurityUtil.generateReferenceNumber()
@@ -150,7 +179,7 @@ public class AccountService implements IAccountService {
                 customer.getFullName(),
                 "CUSTOMER",
                 "NEW_ACCOUNT_CREATED",
-                "Opened " + accType + " account #" + accNum + " with deposit $" + initialDeposit,
+                "Opened " + typeUpper + " account #" + accNum + " with deposit ₹" + String.format("%,.2f", initialDeposit) + " (IFSC: " + account.getIfscCode() + ")",
                 "127.0.0.1"
         ));
 
@@ -199,7 +228,7 @@ public class AccountService implements IAccountService {
                 customer.getFullName(),
                 "CUSTOMER",
                 "PROFILE_UPDATE",
-                "Updated personal profile information and security settings.",
+                "Updated personal profile information and KYC security settings.",
                 "127.0.0.1"
         ));
 

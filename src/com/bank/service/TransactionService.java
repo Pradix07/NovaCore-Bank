@@ -7,40 +7,47 @@ import com.bank.model.*;
 import com.bank.repository.DataStore;
 import com.bank.util.SecurityUtil;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import com.bank.service.interfaces.ITransactionService;
 
 /**
  * ============================================================================
- * SERVICE: TransactionService
+ * SERVICE: TransactionService (Indian Banking System Rails)
  * ============================================================================
  * Demonstrates:
- * - Interface Implementation (implements ITransactionService)
  * - Multithreading & Synchronization (Deterministic Lock Ordering to prevent Deadlocks)
- * - Java 8 Streams & Lambdas for functional filtering
+ * - Indian Payment Modes: UPI, IMPS (24x7 Instant), NEFT, RTGS (High Value >= ₹2,00,000)
+ * - IFSC Code and UPI ID Resolution
+ * - Java 8 Streams & Lambdas for filtering & auditing
  * - ACID Transaction Atomicity
  */
 public class TransactionService implements ITransactionService {
 
     private final DataStore dataStore = DataStore.getInstance();
 
-    public Map<String, Object> transferFunds(String customerId, String fromAccNumber, String toAccNumber, double amount, String description, String securityPin) {
+    public Map<String, Object> transferFunds(String customerId, String fromAccNumber, String toAccNumberOrUpi, double amount, String description, String securityPin) {
+        return transferFundsDetailed(customerId, fromAccNumber, toAccNumberOrUpi, amount, "UPI/IMPS", null, description, securityPin);
+    }
+
+    /**
+     * Enhanced transfer handler supporting Indian Payment Rails (UPI, IMPS, NEFT, RTGS).
+     */
+    public Map<String, Object> transferFundsDetailed(String customerId, String fromAccNumber, String toAccNumberOrUpi, double amount, String transferMode, String recipientIfsc, String description, String securityPin) {
         if (amount <= 0) {
-            throw new ValidationException("Transfer amount must be strictly greater than $0.00.");
+            throw new ValidationException("Transfer amount must be strictly greater than ₹0.00.");
+        }
+
+        String mode = (transferMode != null && !transferMode.trim().isEmpty()) ? transferMode.toUpperCase().trim() : "IMPS";
+
+        // RTGS Minimum Validation according to Reserve Bank of India (RBI)
+        if ("RTGS".equalsIgnoreCase(mode) && amount < 200000.0) {
+            throw new ValidationException("RTGS (Real Time Gross Settlement) requires a minimum transfer amount of ₹2,00,000.00. Please use IMPS, UPI, or NEFT for smaller amounts.");
         }
 
         SystemSettings settings = dataStore.getSystemSettings();
         if (amount > settings.getPerTransactionLimit()) {
-            throw new ValidationException("Amount exceeds single transaction limit of $" + String.format("%.2f", settings.getPerTransactionLimit()));
-        }
-
-        if (fromAccNumber.equalsIgnoreCase(toAccNumber)) {
-            throw new ValidationException("Source and destination accounts cannot be identical.");
+            throw new ValidationException("Amount exceeds per-transaction limit of ₹" + String.format("%,.2f", settings.getPerTransactionLimit()));
         }
 
         User user = dataStore.getUserById(customerId);
@@ -51,7 +58,7 @@ public class TransactionService implements ITransactionService {
 
         if (securityPin != null && !securityPin.isEmpty()) {
             if (!securityPin.equals(customer.getSecurityPin())) {
-                throw new ValidationException("Invalid 4-digit Security PIN.");
+                throw new ValidationException("Invalid 4-digit Transaction / UPI PIN.");
             }
         }
 
@@ -61,12 +68,28 @@ public class TransactionService implements ITransactionService {
         }
 
         if ("FROZEN".equalsIgnoreCase(fromAccount.getStatus()) || fromAccount.isCardFrozen()) {
-            throw new ValidationException("Source account or card is currently locked/frozen.");
+            throw new ValidationException("Source account or linked debit card is currently locked/frozen.");
         }
 
-        Account toAccount = dataStore.getAccountByNumber(toAccNumber);
+        // Resolve destination account: check direct account number or UPI ID
+        Account toAccount = dataStore.getAccountByNumber(toAccNumberOrUpi);
         if (toAccount == null) {
-            throw new AccountNotFoundException("Recipient account #" + toAccNumber + " does not exist in our records.");
+            // Check if toAccNumberOrUpi matches a UPI ID or customer username
+            for (Account acc : dataStore.getAllAccounts()) {
+                if (toAccNumberOrUpi.equalsIgnoreCase(acc.getUpiId()) ||
+                    toAccNumberOrUpi.equalsIgnoreCase(acc.getAccountNumber())) {
+                    toAccount = acc;
+                    break;
+                }
+            }
+        }
+
+        if (toAccount == null) {
+            throw new AccountNotFoundException("Recipient account or UPI ID '" + toAccNumberOrUpi + "' does not exist in NovaCore Bank of India.");
+        }
+
+        if (fromAccount.getAccountNumber().equalsIgnoreCase(toAccount.getAccountNumber())) {
+            throw new ValidationException("Source and destination accounts cannot be identical.");
         }
 
         if (!"ACTIVE".equalsIgnoreCase(toAccount.getStatus())) {
@@ -74,10 +97,10 @@ public class TransactionService implements ITransactionService {
         }
 
         // Deadlock prevention: Lock accounts in deterministic order (by accountNumber)
-        Account firstLock = fromAccNumber.compareTo(toAccNumber) < 0 ? fromAccount : toAccount;
-        Account secondLock = fromAccNumber.compareTo(toAccNumber) < 0 ? toAccount : fromAccount;
+        Account firstLock = fromAccount.getAccountNumber().compareTo(toAccount.getAccountNumber()) < 0 ? fromAccount : toAccount;
+        Account secondLock = fromAccount.getAccountNumber().compareTo(toAccount.getAccountNumber()) < 0 ? toAccount : fromAccount;
 
-        String refNum = SecurityUtil.generateReferenceNumber();
+        String refNum = mode + SecurityUtil.generateReferenceNumber().replace("-", "").substring(0, 12);
         String txIdDebit = SecurityUtil.generateId("TXN");
         String txIdCredit = SecurityUtil.generateId("TXN");
 
@@ -89,15 +112,15 @@ public class TransactionService implements ITransactionService {
             // Execute deposit
             toAccount.deposit(amount);
 
-            String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : "Funds Transfer";
+            String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : (mode + " Transfer");
 
             Transaction debitTx = new Transaction(
                     txIdDebit,
                     TransactionType.TRANSFER_OUT,
                     amount,
-                    fromAccNumber,
-                    toAccNumber,
-                    memo + " (To: " + toAccNumber + ")",
+                    fromAccount.getAccountNumber(),
+                    toAccount.getAccountNumber(),
+                    "[" + mode + "] " + memo + " (To: " + toAccount.getAccountNumber() + " / " + toAccount.getIfscCode() + ")",
                     fromAccount.getBalance(),
                     fromAccount.getCustomerId(),
                     refNum
@@ -107,9 +130,9 @@ public class TransactionService implements ITransactionService {
                     txIdCredit,
                     TransactionType.TRANSFER_IN,
                     amount,
-                    fromAccNumber,
-                    toAccNumber,
-                    memo + " (From: " + fromAccNumber + ")",
+                    fromAccount.getAccountNumber(),
+                    toAccount.getAccountNumber(),
+                    "[" + mode + "] " + memo + " (From: " + fromAccount.getAccountNumber() + " / " + fromAccount.getIfscCode() + ")",
                     toAccount.getBalance(),
                     toAccount.getCustomerId(),
                     refNum
@@ -124,7 +147,7 @@ public class TransactionService implements ITransactionService {
                     customer.getFullName(),
                     "CUSTOMER",
                     "TRANSFER_SUCCESS",
-                    "Transferred $" + amount + " from #" + fromAccNumber + " to #" + toAccNumber + " [Ref: " + refNum + "]",
+                    "Transferred ₹" + String.format("%,.2f", amount) + " via " + mode + " from #" + fromAccount.getAccountNumber() + " to #" + toAccount.getAccountNumber() + " [Ref: " + refNum + "]",
                     "127.0.0.1"
             ));
 
@@ -132,10 +155,12 @@ public class TransactionService implements ITransactionService {
 
             Map<String, Object> result = new HashMap<>();
             result.put("status", "SUCCESS");
+            result.put("transferMode", mode);
             result.put("referenceNumber", refNum);
             result.put("amount", amount);
-            result.put("fromAccount", fromAccNumber);
-            result.put("toAccount", toAccNumber);
+            result.put("fromAccount", fromAccount.getAccountNumber());
+            result.put("toAccount", toAccount.getAccountNumber());
+            result.put("recipientIfsc", toAccount.getIfscCode());
             result.put("remainingBalance", fromAccount.getBalance());
             result.put("timestamp", debitTx.getTimestamp());
             result.put("transactionId", txIdDebit);
@@ -148,7 +173,7 @@ public class TransactionService implements ITransactionService {
 
     public Map<String, Object> deposit(String customerId, String accountNumber, double amount, String description) {
         if (amount <= 0) {
-            throw new ValidationException("Deposit amount must be strictly greater than $0.00.");
+            throw new ValidationException("Deposit amount must be strictly greater than ₹0.00.");
         }
 
         Account account = dataStore.getAccountByNumber(accountNumber);
@@ -157,17 +182,17 @@ public class TransactionService implements ITransactionService {
         }
 
         account.deposit(amount);
-        String refNum = SecurityUtil.generateReferenceNumber();
+        String refNum = "DEP" + SecurityUtil.generateReferenceNumber().replace("-", "").substring(0, 10);
         String txId = SecurityUtil.generateId("TXN");
-        String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : "Instant Online Deposit";
+        String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : "Instant UPI / Cash Deposit";
 
         Transaction tx = new Transaction(
                 txId,
                 TransactionType.DEPOSIT,
                 amount,
-                "ONLINE_GATEWAY",
+                "ONLINE_PAYMENT_GATEWAY",
                 accountNumber,
-                memo,
+                memo + " [IFSC: " + account.getIfscCode() + "]",
                 account.getBalance(),
                 customerId,
                 refNum
@@ -180,6 +205,7 @@ public class TransactionService implements ITransactionService {
         result.put("referenceNumber", refNum);
         result.put("amount", amount);
         result.put("accountNumber", accountNumber);
+        result.put("ifscCode", account.getIfscCode());
         result.put("newBalance", account.getBalance());
         result.put("timestamp", tx.getTimestamp());
         return result;
@@ -187,7 +213,7 @@ public class TransactionService implements ITransactionService {
 
     public Map<String, Object> withdraw(String customerId, String accountNumber, double amount, String description) {
         if (amount <= 0) {
-            throw new ValidationException("Withdrawal amount must be strictly greater than $0.00.");
+            throw new ValidationException("Withdrawal amount must be strictly greater than ₹0.00.");
         }
 
         Account account = dataStore.getAccountByNumber(accountNumber);
@@ -196,16 +222,16 @@ public class TransactionService implements ITransactionService {
         }
 
         account.withdraw(amount);
-        String refNum = SecurityUtil.generateReferenceNumber();
+        String refNum = "ATM" + SecurityUtil.generateReferenceNumber().replace("-", "").substring(0, 10);
         String txId = SecurityUtil.generateId("TXN");
-        String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : "Cash / ATM Withdrawal";
+        String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : "RuPay Debit Card / ATM Cash Withdrawal";
 
         Transaction tx = new Transaction(
                 txId,
                 TransactionType.WITHDRAWAL,
                 amount,
                 accountNumber,
-                "CASH_DISPENSER",
+                "ATM_MUMBAI_FORT",
                 memo,
                 account.getBalance(),
                 customerId,

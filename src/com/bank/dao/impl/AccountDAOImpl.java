@@ -5,7 +5,9 @@ import com.bank.dao.DBConnectionManager;
 import com.bank.exceptions.DatabaseException;
 import com.bank.model.Account;
 import com.bank.model.CheckingAccount;
+import com.bank.model.CurrentAccount;
 import com.bank.model.SavingsAccount;
+import com.bank.model.StudentAccount;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,7 +23,7 @@ import java.util.Optional;
  * ============================================================================
  * Demonstrates:
  * - Interface Implementation (implements AccountDAO)
- * - Polymorphism: Handles SavingsAccount and CheckingAccount tables
+ * - Polymorphism: Handles SavingsAccount, CurrentAccount, StudentAccount, CheckingAccount
  * - Safe parameterized queries and ACID compliance
  */
 public class AccountDAOImpl implements AccountDAO {
@@ -50,6 +52,16 @@ public class AccountDAOImpl implements AccountDAO {
                 SavingsAccount sa = (SavingsAccount) account;
                 pstmt.setDouble(7, sa.getInterestRate());
                 pstmt.setDouble(8, sa.getMinimumBalance());
+                pstmt.setDouble(9, 0.0);
+            } else if (account instanceof CurrentAccount) {
+                CurrentAccount ca = (CurrentAccount) account;
+                pstmt.setDouble(7, 0.0);
+                pstmt.setDouble(8, ca.getMinimumBalance());
+                pstmt.setDouble(9, ca.getOverdraftLimit());
+            } else if (account instanceof StudentAccount) {
+                StudentAccount sta = (StudentAccount) account;
+                pstmt.setDouble(7, sta.getInterestRate());
+                pstmt.setDouble(8, sta.getMinimumBalance());
                 pstmt.setDouble(9, 0.0);
             } else if (account instanceof CheckingAccount) {
                 CheckingAccount ca = (CheckingAccount) account;
@@ -236,6 +248,14 @@ public class AccountDAOImpl implements AccountDAO {
             double rate = rs.getDouble("interest_rate");
             double minBal = rs.getDouble("minimum_balance");
             account = new SavingsAccount(accNum, custId, balance, currency, rate, minBal);
+        } else if ("CURRENT".equalsIgnoreCase(type)) {
+            double overdraft = rs.getDouble("overdraft_limit");
+            double minBal = rs.getDouble("minimum_balance");
+            account = new CurrentAccount(accNum, custId, balance, currency, "GSTIN-VERIFIED", "Commercial Enterprise", overdraft, minBal);
+        } else if ("STUDENT".equalsIgnoreCase(type)) {
+            double rate = rs.getDouble("interest_rate");
+            double minBal = rs.getDouble("minimum_balance");
+            account = new StudentAccount(accNum, custId, balance, currency, "Educational Institution", "STU-0000", rate, minBal, 100000.0, 20000.0);
         } else {
             double overdraft = rs.getDouble("overdraft_limit");
             account = new CheckingAccount(accNum, custId, balance, currency, overdraft);

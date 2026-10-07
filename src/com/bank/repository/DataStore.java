@@ -13,9 +13,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Thread-safe In-Memory Repository with automatic JSON File Persistence.
- * Demonstrates Collections Framework (ConcurrentHashMap, CopyOnWriteArrayList, Streams),
- * Concurrency (ReentrantReadWriteLock), File I/O (NIO Paths/Files), and OOP Data Management.
+ * ============================================================================
+ * DATA STORE (Thread-Safe Persistence & In-Memory Repository)
+ * ============================================================================
+ * Indian Banking System Data Store:
+ * - Persists to data/bank_data.json
+ * - Manages Savings, Current, Student, and Checking Accounts
+ * - Supports Indian KYC (PAN, Aadhaar, UPI ID, IFSC)
+ * - Thread-safe operations using ConcurrentHashMap, CopyOnWriteArrayList, ReentrantReadWriteLock
  */
 public class DataStore {
 
@@ -60,7 +65,7 @@ public class DataStore {
         }
     }
 
-    private void seedInitialData() {
+    public void seedInitialData() {
         usersById.clear();
         usersByUsername.clear();
         accountsByNumber.clear();
@@ -69,126 +74,184 @@ public class DataStore {
         investments.clear();
         auditLogs.clear();
 
-        // 1. Admin User
+        // 1. Admin User - Chief Branch Manager
         Admin admin = new Admin(
                 "USR-ADMIN-01",
                 "admin",
                 SecurityUtil.hashPassword("admin123"),
-                "Dr. Alexander Vance",
-                "admin@novacorebank.com",
-                "+1-800-555-0199",
-                "Executive Operations",
+                "Rajesh Kumar Sharma",
+                "admin@novacorebank.in",
+                "+91-98100-11223",
+                "Banking Operations & Compliance",
                 5
         );
         addUser(admin);
 
-        // 2. Customer 1 - Alex Morgan
-        Customer alex = new Customer(
+        // 2. Customer 1 - Aarav Patel (Mumbai)
+        Customer aarav = new Customer(
                 "USR-CUST-101",
-                "alex.morgan",
+                "aarav.patel",
                 SecurityUtil.hashPassword("customer123"),
-                "Alex Morgan",
-                "alex.morgan@example.com",
-                "+1-555-014-8891",
-                "742 Evergreen Terrace, Springfield",
-                "PAN-AM98741",
+                "Aarav Patel",
+                "aarav.patel@example.com",
+                "+91-98765-43210",
+                "402, Marine Drive, Nariman Point, Mumbai, Maharashtra 400021",
+                "AAAPA1234B",
+                "XXXX-XXXX-9876",
+                "aarav@novabank",
                 "1234"
         );
-        alex.setOccupation("Senior Software Architect");
-        alex.setMonthlyIncome(12500.0);
+        aarav.setOccupation("Principal Cloud Architect");
+        aarav.setMonthlyIncome(185000.0);
 
-        SavingsAccount alexSavings = new SavingsAccount("10010001", alex.getId(), 28540.50, "INR", 4.5, 500.0);
-        alexSavings.setCardNumber("4532889912345678");
-        alexSavings.setCardExpiry("10/28");
-        alexSavings.setCardCvv("742");
+        SavingsAccount aaravSavings = new SavingsAccount("10010001001", aarav.getId(), 74500.00, "INR", 0.040, 1000.0, 50000.0);
+        aaravSavings.setIfscCode("NOVA0001001");
+        aaravSavings.setBranchName("Mumbai Fort Main Branch");
+        aaravSavings.setUpiId("aarav@novabank");
+        aaravSavings.setCardNumber("6080123456789012");
+        aaravSavings.setCardExpiry("10/29");
+        aaravSavings.setCardCvv("742");
 
-        CheckingAccount alexChecking = new CheckingAccount("20010002", alex.getId(), 6420.00, "INR", 2500.0);
-        alexChecking.setCardNumber("4532991187654321");
-        alexChecking.setCardExpiry("05/29");
-        alexChecking.setCardCvv("318");
+        CurrentAccount aaravCurrent = new CurrentAccount(
+                "20010002002",
+                aarav.getId(),
+                150000.00,
+                "INR",
+                "27AAAPA1234B1Z5",
+                "Apex Tech Solutions LLP",
+                100000.0,
+                5000.0
+        );
+        aaravCurrent.setIfscCode("NOVA0001001");
+        aaravCurrent.setBranchName("Mumbai Fort Main Branch");
+        aaravCurrent.setUpiId("apextech@novabank");
+        aaravCurrent.setCardNumber("6080987654321098");
+        aaravCurrent.setCardExpiry("05/30");
+        aaravCurrent.setCardCvv("318");
 
-        alex.addAccountNumber(alexSavings.getAccountNumber());
-        alex.addAccountNumber(alexChecking.getAccountNumber());
+        aarav.addAccountNumber(aaravSavings.getAccountNumber());
+        aarav.addAccountNumber(aaravCurrent.getAccountNumber());
 
-        addUser(alex);
-        addAccount(alexSavings);
-        addAccount(alexChecking);
+        addUser(aarav);
+        addAccount(aaravSavings);
+        addAccount(aaravCurrent);
 
-        // 3. Customer 2 - Priya Sharma
+        // Also add legacy alias user 'alex.morgan' pointing to Aarav's credentials for demo convenience
+        Customer alexAlias = new Customer(
+                "USR-CUST-101-ALIAS",
+                "alex.morgan",
+                SecurityUtil.hashPassword("customer123"),
+                "Aarav Patel (Demo)",
+                "alex.morgan@example.com",
+                "+91-98765-43210",
+                "402, Marine Drive, Nariman Point, Mumbai, Maharashtra 400021",
+                "AAAPA1234B",
+                "XXXX-XXXX-9876",
+                "aarav@novabank",
+                "1234"
+        );
+        alexAlias.setOccupation("Principal Cloud Architect");
+        alexAlias.setMonthlyIncome(185000.0);
+        alexAlias.addAccountNumber(aaravSavings.getAccountNumber());
+        alexAlias.addAccountNumber(aaravCurrent.getAccountNumber());
+        addUser(alexAlias);
+
+        // 3. Customer 2 - Priya Sharma (Bengaluru)
         Customer priya = new Customer(
                 "USR-CUST-102",
                 "priya.sharma",
                 SecurityUtil.hashPassword("customer123"),
                 "Priya Sharma",
                 "priya.sharma@example.com",
-                "+1-555-019-3321",
-                "1204 Silicon Park Blvd, San Jose, CA",
-                "PAN-PS55219",
+                "+91-98123-45678",
+                "88, Indiranagar 100ft Road, Bengaluru, Karnataka 560038",
+                "BBBPB5678C",
+                "XXXX-XXXX-5432",
+                "priya@novabank",
                 "4321"
         );
-        priya.setOccupation("Financial Analyst");
-        priya.setMonthlyIncome(9800.0);
+        priya.setOccupation("Senior Financial Analyst");
+        priya.setMonthlyIncome(145000.0);
 
-        SavingsAccount priyaSavings = new SavingsAccount("10010003", priya.getId(), 14750.00, "INR", 4.5, 500.0);
-        priyaSavings.setCardNumber("4532112233445566");
-        priyaSavings.setCardExpiry("08/27");
+        SavingsAccount priyaSavings = new SavingsAccount("10010003003", priya.getId(), 58250.00, "INR", 0.040, 1000.0, 50000.0);
+        priyaSavings.setIfscCode("NOVA0002002");
+        priyaSavings.setBranchName("Bengaluru Electronic City Branch");
+        priyaSavings.setUpiId("priya@novabank");
+        priyaSavings.setCardNumber("6080334455667788");
+        priyaSavings.setCardExpiry("08/28");
         priyaSavings.setCardCvv("905");
         priya.addAccountNumber(priyaSavings.getAccountNumber());
 
         addUser(priya);
         addAccount(priyaSavings);
 
-        // 4. Customer 3 - John Doe
-        Customer john = new Customer(
+        // 4. Customer 3 - Rohan Verma (Student at IIT Delhi)
+        Customer rohan = new Customer(
                 "USR-CUST-103",
-                "john.doe",
+                "rohan.verma",
                 SecurityUtil.hashPassword("customer123"),
-                "John Doe",
-                "john.doe@example.com",
-                "+1-555-017-6644",
-                "450 Maple Avenue, Boston, MA",
-                "PAN-JD10098",
+                "Rohan Verma",
+                "rohan.verma@example.com",
+                "+91-99887-76655",
+                "Hostel 12, IIT Delhi Campus, Hauz Khas, New Delhi 110016",
+                "CCCPC9012D",
+                "XXXX-XXXX-1122",
+                "rohan@novabank",
                 "1122"
         );
-        john.setOccupation("Operations Consultant");
-        john.setMonthlyIncome(7500.0);
+        rohan.setOccupation("Student (B.Tech Computer Science)");
+        rohan.setMonthlyIncome(15000.0);
 
-        SavingsAccount johnSavings = new SavingsAccount("10010004", john.getId(), 8920.00, "INR", 4.5, 500.0);
-        johnSavings.setCardNumber("4532667788990011");
-        johnSavings.setCardExpiry("11/28");
-        johnSavings.setCardCvv("442");
-        john.addAccountNumber(johnSavings.getAccountNumber());
+        StudentAccount rohanStudent = new StudentAccount(
+                "30010004004",
+                rohan.getId(),
+                18450.00,
+                "INR",
+                "Indian Institute of Technology (IIT) Delhi",
+                "IITD-2024-CS42",
+                0.035,
+                100.0,
+                100000.0,
+                20000.0
+        );
+        rohanStudent.setIfscCode("NOVA0003003");
+        rohanStudent.setBranchName("New Delhi Connaught Place Branch");
+        rohanStudent.setUpiId("rohan@novabank");
+        rohanStudent.setCardNumber("6080998877665544");
+        rohanStudent.setCardExpiry("11/29");
+        rohanStudent.setCardCvv("442");
+        rohan.addAccountNumber(rohanStudent.getAccountNumber());
 
-        addUser(john);
-        addAccount(johnSavings);
+        addUser(rohan);
+        addAccount(rohanStudent);
 
-        // Sample Transactions
-        transactions.add(new Transaction("TXN-001", TransactionType.DEPOSIT, 5000.00, "EXTERNAL_GATEWAY", alexSavings.getAccountNumber(), "Salary Direct Deposit", 28540.50, alex.getId(), "REF-PAYROLL-01"));
-        transactions.add(new Transaction("TXN-002", TransactionType.TRANSFER_OUT, 1200.00, alexSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "Consulting Services Payment", 27340.50, alex.getId(), "REF-TXN-02"));
-        transactions.add(new Transaction("TXN-003", TransactionType.TRANSFER_IN, 1200.00, alexSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "Consulting Services Received", 14750.00, priya.getId(), "REF-TXN-02"));
-        transactions.add(new Transaction("TXN-004", TransactionType.WITHDRAWAL, 350.00, alexChecking.getAccountNumber(), "ATM_BRANCH_07", "ATM Cash Withdrawal", 6420.00, alex.getId(), "REF-ATM-04"));
-        transactions.add(new Transaction("TXN-005", TransactionType.DEPOSIT, 2500.00, "EXTERNAL_GATEWAY", johnSavings.getAccountNumber(), "Client Invoice Settlement", 8920.00, john.getId(), "REF-INV-05"));
+        // Sample Indian Banking Transactions
+        transactions.add(new Transaction("TXN-IN-001", TransactionType.DEPOSIT, 50000.00, "SALARY_CREDIT_IMPS", aaravSavings.getAccountNumber(), "Monthly Salary Credit via IMPS", 74500.00, aarav.getId(), "IMPS92810394812"));
+        transactions.add(new Transaction("TXN-IN-002", TransactionType.TRANSFER_OUT, 15000.00, aaravSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "UPI Transfer to Priya Sharma (NOVA0002002)", 59500.00, aarav.getId(), "UPI202610078891"));
+        transactions.add(new Transaction("TXN-IN-003", TransactionType.TRANSFER_IN, 15000.00, aaravSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "UPI Payment Received from Aarav Patel", 58250.00, priya.getId(), "UPI202610078891"));
+        transactions.add(new Transaction("TXN-IN-004", TransactionType.WITHDRAWAL, 5000.00, aaravCurrent.getAccountNumber(), "ATM_MUMBAI_FORT", "RuPay ATM Cash Withdrawal", 150000.00, aarav.getId(), "ATM20269988112"));
+        transactions.add(new Transaction("TXN-IN-005", TransactionType.DEPOSIT, 10000.00, "SCHOLARSHIP_NEFT", rohanStudent.getAccountNumber(), "National Merit Scholarship NEFT Disbursal", 18450.00, rohan.getId(), "NEFT9081237461"));
 
-        // Sample Loans
-        LoanApplication loan1 = new LoanApplication("LOAN-701", alex.getId(), alex.getFullName(), "HOME", 150000.0, 120, 7.5, "New Family Residence Downpayment");
+        // Sample Loans (INR)
+        LoanApplication loan1 = new LoanApplication("LOAN-IN-701", aarav.getId(), aarav.getFullName(), "HOME", 4500000.0, 180, 8.4, "Apartment Purchase in Mumbai Suburban");
         loan1.setStatus("APPROVED");
         loan1.setDecidedAt("2026-09-15 10:30:00");
-        loan1.setEmisPaid(4);
-        loan1.setRemainingPrincipal(146200.0);
+        loan1.setEmisPaid(6);
+        loan1.setRemainingPrincipal(4420000.0);
         loans.add(loan1);
 
-        LoanApplication loan2 = new LoanApplication("LOAN-702", priya.getId(), priya.getFullName(), "EDUCATION", 25000.0, 36, 6.8, "Master Degree Executive Program");
+        LoanApplication loan2 = new LoanApplication("LOAN-IN-702", priya.getId(), priya.getFullName(), "EDUCATION", 800000.0, 48, 7.2, "Post Graduate Financial Analytics Degree");
         loan2.setStatus("PENDING");
         loans.add(loan2);
 
-        // Sample Investments
-        investments.add(new Investment("INV-901", alex.getId(), "FIXED_DEPOSIT", "Nova High-Yield 12M FD", 10000.0, 7.5, 12));
-        investments.add(new Investment("INV-902", alex.getId(), "MUTUAL_FUND", "Global Tech Growth Index Fund", 5000.0, 11.2, 24));
-        investments.add(new Investment("INV-903", priya.getId(), "GOLD_BOND", "Sovereign Gold Savings Series IV", 3500.0, 6.5, 36));
+        // Sample Indian Investments
+        investments.add(new Investment("INV-IN-901", aarav.getId(), "FIXED_DEPOSIT", "Nova Shrestha 1-Year FD (7.5% p.a.)", 100000.0, 7.5, 12));
+        investments.add(new Investment("INV-IN-902", aarav.getId(), "MUTUAL_FUND", "Nifty 50 Bluechip Index Growth Fund", 50000.0, 12.5, 24));
+        investments.add(new Investment("INV-IN-903", priya.getId(), "GOLD_BOND", "RBI Sovereign Gold Bond (SGB) Series 2026", 75000.0, 6.5, 36));
 
         // Audit Logs
-        auditLogs.add(new AuditLog("LOG-001", "USR-ADMIN-01", "Dr. Alexander Vance", "ADMIN", "SYSTEM_INIT", "System initialized with production configuration and baseline accounts.", "127.0.0.1"));
-        auditLogs.add(new AuditLog("LOG-002", "USR-ADMIN-01", "Dr. Alexander Vance", "ADMIN", "LOAN_APPROVAL", "Approved Home Loan LOAN-701 for customer Alex Morgan.", "127.0.0.1"));
+        auditLogs.add(new AuditLog("LOG-IN-001", "USR-ADMIN-01", "Rajesh Kumar Sharma", "ADMIN", "SYSTEM_INIT", "NovaCore Bank of India core platform initialized with IFSC NOVA0001001.", "127.0.0.1"));
+        auditLogs.add(new AuditLog("LOG-IN-002", "USR-ADMIN-01", "Rajesh Kumar Sharma", "ADMIN", "LOAN_APPROVAL", "Approved Home Loan LOAN-IN-701 for customer Aarav Patel (₹45,00,000.00).", "127.0.0.1"));
     }
 
     public synchronized void saveToFile() {
@@ -277,7 +340,7 @@ public class DataStore {
                     String phone = (String) m.get("phone");
 
                     if ("ADMIN".equalsIgnoreCase(role)) {
-                        String dept = (String) m.getOrDefault("department", "Administration");
+                        String dept = (String) m.getOrDefault("department", "Banking Operations");
                         Number access = (Number) m.getOrDefault("accessLevel", 5);
                         Admin admin = new Admin(id, username, passwordHash, fullName, email, phone, dept, access.intValue());
                         if (m.containsKey("active")) admin.setActive(Boolean.TRUE.equals(m.get("active")));
@@ -285,8 +348,10 @@ public class DataStore {
                     } else {
                         String address = (String) m.getOrDefault("address", "");
                         String pan = (String) m.getOrDefault("panOrTaxId", "");
+                        String aadhaar = (String) m.getOrDefault("aadhaarNumber", "XXXX-XXXX-1234");
+                        String upi = (String) m.getOrDefault("upiId", username + "@novabank");
                         String pin = (String) m.getOrDefault("securityPin", "1234");
-                        Customer customer = new Customer(id, username, passwordHash, fullName, email, phone, address, pan, pin);
+                        Customer customer = new Customer(id, username, passwordHash, fullName, email, phone, address, pan, aadhaar, upi, pin);
                         if (m.containsKey("active")) customer.setActive(Boolean.TRUE.equals(m.get("active")));
                         if (m.containsKey("occupation")) customer.setOccupation((String) m.get("occupation"));
                         if (m.containsKey("monthlyIncome")) customer.setMonthlyIncome(((Number) m.get("monthlyIncome")).doubleValue());
@@ -312,13 +377,33 @@ public class DataStore {
 
                     Account account;
                     if ("SAVINGS".equalsIgnoreCase(type)) {
-                        double rate = ((Number) m.getOrDefault("interestRate", 4.5)).doubleValue();
-                        double minBal = ((Number) m.getOrDefault("minimumBalance", 500.0)).doubleValue();
-                        account = new SavingsAccount(num, custId, bal, curr, rate, minBal);
+                        double rate = ((Number) m.getOrDefault("interestRate", 0.040)).doubleValue();
+                        double minBal = ((Number) m.getOrDefault("minimumBalance", 1000.0)).doubleValue();
+                        double maxWith = ((Number) m.getOrDefault("maxWithdrawLimit", 50000.0)).doubleValue();
+                        account = new SavingsAccount(num, custId, bal, curr, rate, minBal, maxWith);
+                    } else if ("CURRENT".equalsIgnoreCase(type)) {
+                        String trade = (String) m.getOrDefault("tradeLicenseOrGst", "GSTIN-PENDING");
+                        String bName = (String) m.getOrDefault("businessName", "Commercial Enterprise");
+                        double od = ((Number) m.getOrDefault("overdraftLimit", 50000.0)).doubleValue();
+                        double minBal = ((Number) m.getOrDefault("minimumBalance", 5000.0)).doubleValue();
+                        account = new CurrentAccount(num, custId, bal, curr, trade, bName, od, minBal);
+                    } else if ("STUDENT".equalsIgnoreCase(type)) {
+                        String inst = (String) m.getOrDefault("institutionName", "Educational Institution");
+                        String stuId = (String) m.getOrDefault("studentId", "STU-0000");
+                        double rate = ((Number) m.getOrDefault("interestRate", 0.035)).doubleValue();
+                        double minBal = ((Number) m.getOrDefault("minimumBalance", 100.0)).doubleValue();
+                        double maxBal = ((Number) m.getOrDefault("maxBalanceLimit", 100000.0)).doubleValue();
+                        double maxWith = ((Number) m.getOrDefault("maxWithdrawLimit", 20000.0)).doubleValue();
+                        account = new StudentAccount(num, custId, bal, curr, inst, stuId, rate, minBal, maxBal, maxWith);
                     } else {
-                        double od = ((Number) m.getOrDefault("overdraftLimit", 1000.0)).doubleValue();
+                        double od = ((Number) m.getOrDefault("overdraftLimit", 25000.0)).doubleValue();
                         account = new CheckingAccount(num, custId, bal, curr, od);
                     }
+
+                    if (m.containsKey("ifscCode")) account.setIfscCode((String) m.get("ifscCode"));
+                    if (m.containsKey("branchName")) account.setBranchName((String) m.get("branchName"));
+                    if (m.containsKey("upiId")) account.setUpiId((String) m.get("upiId"));
+                    if (m.containsKey("nomineeName")) account.setNomineeName((String) m.get("nomineeName"));
                     if (m.containsKey("status")) account.setStatus((String) m.get("status"));
                     if (m.containsKey("cardNumber")) account.setCardNumber((String) m.get("cardNumber"));
                     if (m.containsKey("cardExpiry")) account.setCardExpiry((String) m.get("cardExpiry"));
@@ -364,7 +449,7 @@ public class DataStore {
                     l.setLoanType((String) m.get("loanType"));
                     l.setAmount(((Number) m.getOrDefault("amount", 0.0)).doubleValue());
                     l.setTenureMonths(((Number) m.getOrDefault("tenureMonths", 12)).intValue());
-                    l.setInterestRate(((Number) m.getOrDefault("interestRate", 8.0)).doubleValue());
+                    l.setInterestRate(((Number) m.getOrDefault("interestRate", 8.4)).doubleValue());
                     l.setMonthlyEmi(((Number) m.getOrDefault("monthlyEmi", 0.0)).doubleValue());
                     l.setPurpose((String) m.get("purpose"));
                     l.setStatus((String) m.getOrDefault("status", "PENDING"));
@@ -388,7 +473,7 @@ public class DataStore {
                     inv.setType((String) m.get("type"));
                     inv.setName((String) m.get("name"));
                     inv.setPrincipalAmount(((Number) m.getOrDefault("principalAmount", 0.0)).doubleValue());
-                    inv.setInterestRate(((Number) m.getOrDefault("interestRate", 7.0)).doubleValue());
+                    inv.setInterestRate(((Number) m.getOrDefault("interestRate", 7.5)).doubleValue());
                     inv.setDurationMonths(((Number) m.getOrDefault("durationMonths", 12)).intValue());
                     inv.setExpectedReturn(((Number) m.getOrDefault("expectedReturn", 0.0)).doubleValue());
                     inv.setCurrentMaturityValue(((Number) m.getOrDefault("currentMaturityValue", 0.0)).doubleValue());

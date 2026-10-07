@@ -5,14 +5,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Customer model class extending User.
+ * ============================================================================
+ * CUSTOMER MODEL (Indian Banking System)
+ * ============================================================================
+ * Encapsulates retail & commercial banking customer profile:
+ * - KYC Verification: PAN (Permanent Account Number), Aadhaar Number
+ * - Digital Payments: UPI ID (e.g., name@novabank)
+ * - Security: 4-digit Transaction / ATM PIN
+ * - Associated Indian Bank Account Numbers
  */
 public class Customer extends User {
     private static final long serialVersionUID = 1L;
 
     private String address;
-    private String panOrTaxId;
-    private String securityPin;
+    private String panOrTaxId;    // PAN Number (e.g., "AAAPA1234B")
+    private String aadhaarNumber;  // Masked/12-digit Aadhaar (e.g., "XXXX-XXXX-9876")
+    private String upiId;          // UPI Handle (e.g., "aarav.patel@novabank")
+    private String securityPin;    // 4-digit Transaction / ATM PIN
     private List<String> accountNumbers;
     private String occupation;
     private double monthlyIncome;
@@ -28,6 +37,21 @@ public class Customer extends User {
         super(id, username, passwordHash, fullName, email, phone, "CUSTOMER");
         this.address = address;
         this.panOrTaxId = panOrTaxId;
+        this.aadhaarNumber = "XXXX-XXXX-1234";
+        this.upiId = username + "@novabank";
+        this.securityPin = securityPin;
+        this.accountNumbers = new ArrayList<>();
+        this.occupation = "Professional";
+        this.monthlyIncome = 50000.0;
+    }
+
+    public Customer(String id, String username, String passwordHash, String fullName, String email, String phone,
+                    String address, String panOrTaxId, String aadhaarNumber, String upiId, String securityPin) {
+        super(id, username, passwordHash, fullName, email, phone, "CUSTOMER");
+        this.address = address;
+        this.panOrTaxId = panOrTaxId;
+        this.aadhaarNumber = aadhaarNumber;
+        this.upiId = (upiId != null && !upiId.isEmpty()) ? upiId : (username + "@novabank");
         this.securityPin = securityPin;
         this.accountNumbers = new ArrayList<>();
         this.occupation = "Professional";
@@ -44,17 +68,26 @@ public class Customer extends User {
         Map<String, Object> map = getBaseMap();
         map.put("address", address);
         map.put("panOrTaxId", panOrTaxId);
+        map.put("aadhaarNumber", aadhaarNumber);
+        map.put("upiId", upiId != null ? upiId : (username + "@novabank"));
         map.put("accountNumbers", accountNumbers);
         map.put("occupation", occupation);
         map.put("monthlyIncome", monthlyIncome);
         return map;
     }
 
+    // Getters and Setters
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
     public String getPanOrTaxId() { return panOrTaxId; }
     public void setPanOrTaxId(String panOrTaxId) { this.panOrTaxId = panOrTaxId; }
+
+    public String getAadhaarNumber() { return aadhaarNumber; }
+    public void setAadhaarNumber(String aadhaarNumber) { this.aadhaarNumber = aadhaarNumber; }
+
+    public String getUpiId() { return upiId; }
+    public void setUpiId(String upiId) { this.upiId = upiId; }
 
     public String getSecurityPin() { return securityPin; }
     public void setSecurityPin(String securityPin) { this.securityPin = securityPin; }
