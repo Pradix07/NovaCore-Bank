@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Banking Portal | NovaCore Bank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+            <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v4M12 14v4M16 14v4"/>
+          </svg>
+        </div>
+        <span style="font-weight: 800; font-size: 1.15rem; color: #fff;">NovaCore<span style="color: var(--primary);">Bank</span></span>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="nav-item active" data-tab="tab-overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Account Overview</span>
+        </li>
+        <li class="nav-item" data-tab="tab-transactions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Transaction History</span>
+        </li>
+        <li class="nav-item" data-tab="tab-services">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Loans & Investments</span>
+        </li>
+        <li class="nav-item" data-tab="tab-profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile & Security</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div style="font-size: 0.75rem; color: var(--text-dim);">
+          Session Active<br><strong>Core Java 25</strong>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 id="topbar-title">Account Overview</h2>
+        </div>
+        <div class="topbar-right">
+          <div class="user-profile-badge">
+            <div class="user-avatar" id="user-avatar-text">U</div>
+            <span id="nav-user-name" style="font-size: 0.9rem; font-weight: 600;">Customer</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-transfer')">⚡ Send Money</button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <main class="content-area">
+
+        <!-- TAB 1: OVERVIEW -->
+        <div class="tab-content active" id="tab-overview">
+          <!-- Stat Grid -->
+          <div class="stat-grid">
+            <div class="glass-card stat-card">
+              <div class="stat-icon primary">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><circle cx="18" cy="12" r="2"/></svg>
+              </div>
+              <div>
+                <div class="stat-title">Total Net Balance</div>
+                <div class="stat-value" id="stat-total-balance">₹0.00</div>
+              </div>
+            </div>
+
+            <div class="glass-card stat-card">
+              <div class="stat-icon success">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+              </div>
+              <div>
+                <div class="stat-title">Total Inflow</div>
+                <div class="stat-value" id="stat-total-inflow" style="color: var(--success);">₹0.00</div>
+              </div>
+            </div>
+
+            <div class="glass-card stat-card">
+              <div class="stat-icon danger">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+              </div>
+              <div>
+                <div class="stat-title">Total Outflow</div>
+                <div class="stat-value" id="stat-total-outflow">₹0.00</div>
+              </div>
+            </div>
+
+            <div class="glass-card stat-card">
+              <div class="stat-icon info">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <div>
+                <div class="stat-title">Linked Accounts</div>
+                <div class="stat-value" id="stat-active-accounts">1</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Grid -->
+          <div style="margin-bottom: 28px;">
+            <div class="quick-actions-grid">
+              <div class="quick-action-btn" onclick="openModal('modal-transfer')">
+                <span style="font-size: 1.5rem;">💸</span>
+                <span>Send Money</span>
+              </div>
+              <div class="quick-action-btn" onclick="openModal('modal-deposit')">
+                <span style="font-size: 1.5rem;">📥</span>
+                <span>Deposit Funds</span>
+              </div>
+              <div class="quick-action-btn" onclick="openModal('modal-withdraw')">
+                <span style="font-size: 1.5rem;">🏧</span>
+                <span>Cash Withdraw</span>
+              </div>
+              <div class="quick-action-btn" onclick="document.querySelector('[data-tab=\'tab-services\']').click()">
+                <span style="font-size: 1.5rem;">📑</span>
+                <span>Apply Loan</span>
+              </div>
+              <div class="quick-action-btn" onclick="openModal('modal-invest')">
+                <span style="font-size: 1.5rem;">💎</span>
+                <span>Book Investment</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accounts & Virtual Card Layout -->
+          <div class="grid-3col" style="margin-bottom: 28px;">
+            <div>
+              <h3 style="margin-bottom: 16px;">Your Bank Accounts</h3>
+              <div id="accounts-cards-container" style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Dynamically rendered -->
+              </div>
+            </div>
+
+            <!-- Virtual Card Panel -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3>Virtual Debit Card</h3>
+                <button id="btn-freeze-card" class="btn btn-danger btn-sm" onclick="togglePrimaryCardFreeze()">🔒 Freeze Card</button>
+              </div>
+              <div class="virtual-card" id="primary-virtual-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div class="card-chip"></div>
+                  <span style="font-weight: 800; letter-spacing: 1px; font-size: 1.1rem;">VISA</span>
+                </div>
+                <div class="card-number" id="card-number-display">•••• •••• •••• ••••</div>
+                <div class="card-details">
+                  <div>
+                    <div style="font-size: 0.65rem; opacity: 0.7;">CARD HOLDER</div>
+                    <div id="card-holder-display" style="font-weight: 700;">CUSTOMER</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.65rem; opacity: 0.7;">EXPIRES</div>
+                    <div id="card-expiry-display" style="font-weight: 700;">12/28</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.65rem; opacity: 0.7;">CVV</div>
+                    <div id="card-cvv-display" style="font-weight: 700;">•••</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3>Recent Account Activity</h3>
+              <button class="btn btn-secondary btn-sm" onclick="document.querySelector('[data-tab=\'tab-transactions\']').click()">View All Transactions →</button>
+            </div>
+            <div id="recent-transactions-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: TRANSACTIONS -->
+        <div class="tab-content" id="tab-transactions">
+          <div class="glass-card" style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+              <div style="display: flex; gap: 12px; flex: 1; min-width: 280px;">
+                <input type="text" id="search-tx-input" class="form-control" placeholder="Search by recipient, account # or reference..." oninput="loadCustomerTransactions()">
+                <select id="filter-tx-type" class="form-control" style="max-width: 180px;" onchange="loadCustomerTransactions()">
+                  <option value="ALL">All Types</option>
+                  <option value="CREDIT">Credits (+)</option>
+                  <option value="DEBIT">Debits (-)</option>
+                  <option value="DEPOSIT">Deposits</option>
+                  <option value="WITHDRAWAL">Withdrawals</option>
+                  <option value="TRANSFER_OUT">Transfers Out</option>
+                  <option value="TRANSFER_IN">Transfers In</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" onclick="exportTransactionsCSV()">📥 Download CSV Statement</button>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Reference / ID</th>
+                    <th>Date & Time</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Route</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="full-transactions-table-body">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: SERVICES (LOANS & INVESTMENTS) -->
+        <div class="tab-content" id="tab-services">
+          <!-- Loan Application & EMI Calculator -->
+          <div class="grid-2col" style="margin-bottom: 30px;">
+            <!-- EMI Calculator -->
+            <div class="glass-card">
+              <h3 style="margin-bottom: 8px;">Interactive Loan Calculator</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Calculate your monthly EMI and interest schedule before applying.</p>
+
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                  <label class="form-label">Loan Amount</label>
+                  <span id="display-calc-amount" style="font-weight: 700; color: var(--primary);">₹10,000</span>
+                </div>
+                <input type="range" id="calc-loan-amount" min="1000" max="250000" step="1000" value="10000" style="width: 100%;">
+              </div>
+
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                  <label class="form-label">Tenure (Months)</label>
+                  <span id="display-calc-months" style="font-weight: 700; color: var(--primary);">24 Months</span>
+                </div>
+                <input type="range" id="calc-loan-months" min="6" max="120" step="6" value="24" style="width: 100%;">
+              </div>
+
+              <div style="background: var(--bg-input); padding: 18px; border-radius: var(--radius-sm); margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Estimated Monthly EMI</div>
+                  <div id="display-calc-emi" style="font-size: 1.4rem; font-weight: 800; color: var(--success);">₹454.56</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Total Repayment</div>
+                  <div id="display-calc-total" style="font-size: 1.4rem; font-weight: 800; color: #fff;">₹10,909.44</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Apply Loan Form -->
+            <div class="glass-card">
+              <h3 style="margin-bottom: 8px;">Apply for a New Loan</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Instant loan processing evaluated directly by bank administration.</p>
+
+              <form id="apply-loan-form">
+                <div class="form-group">
+                  <label class="form-label">Select Loan Category</label>
+                  <select id="loan-type-select" class="form-control">
+                    <option value="PERSONAL">Personal Loan (8.5% p.a.)</option>
+                    <option value="HOME">Home Mortgage Loan (7.5% p.a.)</option>
+                    <option value="EDUCATION">Student Education Loan (6.8% p.a.)</option>
+                    <option value="BUSINESS">Business Expansion Loan (9.0% p.a.)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Application Purpose / Note</label>
+                  <input type="text" id="loan-purpose-input" class="form-control" placeholder="e.g. Higher studies tuition / Home remodeling" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Submit Loan Application</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Existing Loans -->
+          <div class="glass-card" style="margin-bottom: 30px;">
+            <h3 style="margin-bottom: 16px;">Your Loan Applications & Active Repayments</h3>
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Loan ID</th>
+                    <th>Category</th>
+                    <th>Principal</th>
+                    <th>Monthly EMI</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="customer-loans-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Wealth & Investments -->
+          <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <h3>Wealth & Investment Portfolios</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">High-yield Fixed Deposits, Sovereign Gold, and Index Funds.</p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-invest')">+ Create Investment</button>
+            </div>
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Portfolio Name</th>
+                    <th>Type</th>
+                    <th>Invested Principal</th>
+                    <th>Yield Rate</th>
+                    <th>Maturity Value</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="customer-investments-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: PROFILE & SECURITY -->
+        <div class="tab-content" id="tab-profile">
+          <div class="glass-card" style="max-width: 700px; margin: 0 auto;">
+            <h3 style="margin-bottom: 8px;">Personal Information & Security Settings</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px;">Manage contact details, login credentials, and transaction authorization PIN.</p>
+
+            <form id="customer-profile-form">
+              <div class="grid-2col">
+                <div class="form-group">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" id="profile-fullname" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address</label>
+                  <input type="email" id="profile-email" class="form-control" required>
+                </div>
+              </div>
+
+              <div class="grid-2col">
+                <div class="form-group">
+                  <label class="form-label">Contact Phone</label>
+                  <input type="text" id="profile-phone" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">4-Digit Security PIN (For Transfers)</label>
+                  <input type="password" id="profile-pin" class="form-control" maxlength="4" placeholder="••••">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Residential Address</label>
+                <input type="text" id="profile-address" class="form-control">
+              </div>
+
+              <div style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
+                <h4 style="margin-bottom: 14px;">Change Login Password (Optional)</h4>
+                <div class="grid-2col">
+                  <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" id="profile-current-pass" class="form-control" placeholder="••••••••">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" id="profile-new-pass" class="form-control" placeholder="••••••••">
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="margin-top: 16px;">Save Profile Changes</button>
+            </form>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: SEND MONEY -->
+  <div class="modal-backdrop" id="modal-transfer">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>⚡ Instant Money Transfer</h3>
+        <button class="modal-close" onclick="closeModal('modal-transfer')">&times;</button>
+      </div>
+      <form id="transfer-funds-form">
+        <div class="form-group">
+          <label class="form-label">From Account</label>
+          <select id="transfer-from-account" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recipient Account Number *</label>
+          <input type="text" id="transfer-to-account" class="form-control" placeholder="e.g. 10010003" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (₹) *</label>
+          <input type="number" id="transfer-amount" class="form-control" placeholder="0.00" min="1" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description / Remarks</label>
+          <input type="text" id="transfer-description" class="form-control" placeholder="e.g. Rent, Freelance Payment">
+        </div>
+        <div class="form-group">
+          <label class="form-label">4-Digit Security PIN</label>
+          <input type="password" id="transfer-pin" class="form-control" maxlength="4" placeholder="••••">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Execute Transfer</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-transfer')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DEPOSIT -->
+  <div class="modal-backdrop" id="modal-deposit">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📥 Deposit Money</h3>
+        <button class="modal-close" onclick="closeModal('modal-deposit')">&times;</button>
+      </div>
+      <form id="deposit-funds-form">
+        <div class="form-group">
+          <label class="form-label">Deposit Into Account</label>
+          <select id="deposit-account" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deposit Amount (₹)</label>
+          <input type="number" id="deposit-amount" class="form-control" placeholder="500.00" min="1" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deposit Source / Note</label>
+          <input type="text" id="deposit-description" class="form-control" placeholder="e.g. Salary, Cash Counter Deposit">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">Confirm Deposit</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-deposit')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: WITHDRAW -->
+  <div class="modal-backdrop" id="modal-withdraw">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🏧 Cash Withdrawal</h3>
+        <button class="modal-close" onclick="closeModal('modal-withdraw')">&times;</button>
+      </div>
+      <form id="withdraw-funds-form">
+        <div class="form-group">
+          <label class="form-label">Withdraw From Account</label>
+          <select id="withdraw-account" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Withdrawal Amount (₹)</label>
+          <input type="number" id="withdraw-amount" class="form-control" placeholder="500.00" min="1" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason / ATM Location</label>
+          <input type="text" id="withdraw-description" class="form-control" placeholder="e.g. ATM Downtown Branch">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button type="submit" class="btn btn-danger" style="flex: 1;">Confirm Withdrawal</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-withdraw')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PAY EMI -->
+  <div class="modal-backdrop" id="modal-pay-emi">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>💳 Pay Loan Monthly EMI</h3>
+        <button class="modal-close" onclick="closeModal('modal-pay-emi')">&times;</button>
+      </div>
+      <input type="hidden" id="pay-emi-loan-id">
+      <div style="margin-bottom: 16px; background: var(--bg-input); padding: 14px; border-radius: var(--radius-sm);">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Due Monthly Installment:</div>
+        <div id="pay-emi-amount-display" style="font-size: 1.6rem; font-weight: 800; color: var(--primary);">₹0.00</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pay From Account</label>
+        <select id="loan-emi-account" class="form-control"></select>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 24px;">
+        <button type="button" class="btn btn-primary" style="flex: 1;" onclick="submitPayEmi()">Authorize EMI Payment</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pay-emi')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE INVESTMENT -->
+  <div class="modal-backdrop" id="modal-invest">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>💎 Book New Wealth Investment</h3>
+        <button class="modal-close" onclick="closeModal('modal-invest')">&times;</button>
+      </div>
+      <form id="create-investment-form">
+        <div class="form-group">
+          <label class="form-label">Debit Source Account</label>
+          <select id="invest-from-account" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Investment Instrument</label>
+          <select id="invest-type-select" class="form-control">
+            <option value="FIXED_DEPOSIT">Fixed Deposit (7.25% p.a. Guaranteed)</option>
+            <option value="MUTUAL_FUND">Index Mutual Fund (11.5% p.a. Growth)</option>
+            <option value="GOLD_BOND">Sovereign Gold Bond (7.0% p.a. + Gold Appreciation)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Portfolio Title / Name</label>
+          <input type="text" id="invest-name-input" class="form-control" placeholder="e.g. Retirement 2030 Nest Egg" required>
+        </div>
+        <div class="grid-2col">
+          <div class="form-group">
+            <label class="form-label">Principal Amount (₹)</label>
+            <input type="number" id="invest-amount-input" class="form-control" value="10000" min="500" step="500" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tenure</label>
+            <select id="invest-tenure-select" class="form-control">
+              <option value="6">6 Months</option>
+              <option value="12" selected>12 Months</option>
+              <option value="24">24 Months</option>
+              <option value="36">36 Months</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Book Investment</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-invest')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: WITHDRAW INVESTMENT -->
+  <div class="modal-backdrop" id="modal-withdraw-inv">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>💰 Liquidate & Withdraw Investment</h3>
+        <button class="modal-close" onclick="closeModal('modal-withdraw-inv')">&times;</button>
+      </div>
+      <input type="hidden" id="withdraw-inv-id">
+      <div style="margin-bottom: 16px; background: var(--bg-input); padding: 14px; border-radius: var(--radius-sm);">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Total Payout Value (Principal + Returns):</div>
+        <div id="withdraw-inv-amount-display" style="font-size: 1.6rem; font-weight: 800; color: var(--success);">₹0.00</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deposit Payout Into Account</label>
+        <select id="inv-payout-account" class="form-control"></select>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 24px;">
+        <button type="button" class="btn btn-success" style="flex: 1;" onclick="submitWithdrawInv()">Liquidate & Receive Funds</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-withdraw-inv')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/toast.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/customer.js"></script>
+</body>
+</html>
