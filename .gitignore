@@ -7,6 +7,10 @@ bin/
 .DS_Store
 Thumbs.db
 
+# Database runtime files
+data/*.db
+data/*.db-*
+
 # IDE configuration
 .idea/
 *.iml

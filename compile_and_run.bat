@@ -9,7 +9,7 @@ echo.
 echo [1/2] Compiling all Core Java source files...
 if not exist "bin" mkdir bin
 dir /s /b src\*.java > sources.txt
-javac -encoding UTF-8 -d bin @sources.txt
+javac -encoding UTF-8 -d bin -cp "lib/*;src" @sources.txt
 del sources.txt
 
 if %ERRORLEVEL% NEQ 0 (
@@ -32,17 +32,17 @@ set /p MODE="Enter your choice (1, 2, or 3) [Default: 1]: "
 if "%MODE%"=="2" (
     echo.
     echo [Launching Desktop Java Swing GUI Interface...]
-    java -cp bin com.bank.gui.BankSwingApp
+    java -cp "bin;lib/*" com.bank.gui.BankSwingApp
 ) else if "%MODE%"=="3" (
     echo.
     echo [Launching Web Server on http://localhost:8080 and Desktop Swing GUI...]
     start http://localhost:8080
-    java -cp bin com.bank.Main --gui 8080
+    java -cp "bin;lib/*" com.bank.Main --gui 8080
 ) else (
     echo.
     echo [Launching Multi-threaded HTTP Web Banking Server on http://localhost:8080...]
     start http://localhost:8080
-    java -cp bin com.bank.Main 8080
+    java -cp "bin;lib/*" com.bank.Main 8080
 )
 
 pause

@@ -29,8 +29,8 @@ public class TransactionDAOImpl implements TransactionDAO {
     @Override
     public boolean save(Transaction tx) throws DatabaseException {
         String sql = "INSERT INTO transactions (id, source_account, destination_account, customer_id, "
-                + "amount, currency, type, status, description, timestamp) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "amount, currency, type, status, description, balance_after, reference_number, timestamp) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -44,9 +44,11 @@ public class TransactionDAOImpl implements TransactionDAO {
             pstmt.setDouble(5, tx.getAmount());
             pstmt.setString(6, "INR");
             pstmt.setString(7, tx.getType() != null ? tx.getType().name() : "TRANSFER");
-            pstmt.setString(8, tx.getStatus());
+            pstmt.setString(8, tx.getStatus() != null ? tx.getStatus() : "SUCCESS");
             pstmt.setString(9, tx.getDescription());
-            pstmt.setString(10, tx.getTimestamp());
+            pstmt.setDouble(10, tx.getBalanceAfter());
+            pstmt.setString(11, tx.getReferenceNumber());
+            pstmt.setString(12, tx.getTimestamp());
 
             return pstmt.executeUpdate() > 0;
 
@@ -155,7 +157,7 @@ public class TransactionDAOImpl implements TransactionDAO {
 
     @Override
     public boolean update(Transaction tx) throws DatabaseException {
-        String sql = "UPDATE transactions SET status = ?, description = ? WHERE id = ?";
+        String sql = "UPDATE transactions SET status = ?, description = ?, balance_after = ?, reference_number = ? WHERE id = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -163,7 +165,9 @@ public class TransactionDAOImpl implements TransactionDAO {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, tx.getStatus());
             pstmt.setString(2, tx.getDescription());
-            pstmt.setString(3, tx.getId());
+            pstmt.setDouble(3, tx.getBalanceAfter());
+            pstmt.setString(4, tx.getReferenceNumber());
+            pstmt.setString(5, tx.getId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new DatabaseException("Error updating transaction: " + e.getMessage(), e);
@@ -198,6 +202,8 @@ public class TransactionDAOImpl implements TransactionDAO {
         String typeStr = rs.getString("type");
         String status = rs.getString("status");
         String desc = rs.getString("description");
+        double balAfter = rs.getDouble("balance_after");
+        String refNum = rs.getString("reference_number");
         String time = rs.getString("timestamp");
 
         TransactionType type = TransactionType.TRANSFER_OUT;
@@ -205,9 +211,9 @@ public class TransactionDAOImpl implements TransactionDAO {
             if (typeStr != null) type = TransactionType.valueOf(typeStr);
         } catch (Exception ignored) {}
 
-        Transaction tx = new Transaction(id, type, amt, src, dst, desc, 0.0, cust, "REF-" + id);
-        tx.setStatus(status);
-        tx.setTimestamp(time);
+        Transaction tx = new Transaction(id, type, amt, src, dst, desc, balAfter, cust, refNum != null ? refNum : ("REF-" + id));
+        tx.setStatus(status != null ? status : "SUCCESS");
+        if (time != null) tx.setTimestamp(time);
         return tx;
     }
 }

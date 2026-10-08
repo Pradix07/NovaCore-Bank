@@ -96,11 +96,19 @@ public class DBConnectionManager {
      */
     public Connection getConnection() throws DatabaseException {
         try {
+            Connection conn;
             if (dbUser != null && !dbUser.isEmpty()) {
-                return DriverManager.getConnection(jdbcUrl, dbUser, dbPassword);
+                conn = DriverManager.getConnection(jdbcUrl, dbUser, dbPassword);
             } else {
-                return DriverManager.getConnection(jdbcUrl);
+                conn = DriverManager.getConnection(jdbcUrl);
             }
+            if (conn != null && jdbcUrl != null && jdbcUrl.startsWith("jdbc:sqlite:")) {
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute("PRAGMA foreign_keys = ON;");
+                    stmt.execute("PRAGMA journal_mode = WAL;");
+                } catch (SQLException ignored) {}
+            }
+            return conn;
         } catch (SQLException e) {
             throw new DatabaseException("Failed to establish JDBC Connection: " + e.getMessage(), e);
         }

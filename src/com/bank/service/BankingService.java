@@ -97,6 +97,7 @@ public class BankingService implements IBankingService {
 
             if (disburseAccount != null) {
                 disburseAccount.deposit(loan.getAmount());
+                dataStore.updateAccount(disburseAccount);
                 Transaction tx = new Transaction(
                         SecurityUtil.generateId("TXN"),
                         TransactionType.LOAN_DISBURSEMENT,
@@ -133,6 +134,7 @@ public class BankingService implements IBankingService {
             ));
         }
 
+        dataStore.updateLoan(loan);
         dataStore.saveToFile();
         return loan;
     }
@@ -154,6 +156,7 @@ public class BankingService implements IBankingService {
 
         double emiAmount = loan.getMonthlyEmi();
         account.withdraw(emiAmount);
+        dataStore.updateAccount(account);
 
         loan.setEmisPaid(loan.getEmisPaid() + 1);
         loan.setRemainingPrincipal(Math.max(0.0, loan.getRemainingPrincipal() - (emiAmount * 0.8)));
@@ -161,6 +164,7 @@ public class BankingService implements IBankingService {
         if (loan.getEmisPaid() >= loan.getTenureMonths() || loan.getRemainingPrincipal() <= 0) {
             loan.setStatus("PAID_OFF");
         }
+        dataStore.updateLoan(loan);
 
         String refNum = SecurityUtil.generateReferenceNumber();
         Transaction tx = new Transaction(
@@ -201,6 +205,7 @@ public class BankingService implements IBankingService {
         }
 
         account.withdraw(amount);
+        dataStore.updateAccount(account);
 
         double rate = dataStore.getSystemSettings().getDefaultFdInterestRate();
         if ("MUTUAL_FUND".equalsIgnoreCase(type)) rate = 11.5;
@@ -263,7 +268,9 @@ public class BankingService implements IBankingService {
 
         double payout = inv.getCurrentMaturityValue();
         account.deposit(payout);
+        dataStore.updateAccount(account);
         inv.setStatus("WITHDRAWN");
+        dataStore.updateInvestment(inv);
 
         String refNum = SecurityUtil.generateReferenceNumber();
         Transaction tx = new Transaction(

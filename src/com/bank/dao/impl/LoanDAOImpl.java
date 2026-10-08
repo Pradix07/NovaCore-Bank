@@ -28,8 +28,8 @@ public class LoanDAOImpl implements LoanDAO {
     @Override
     public boolean save(LoanApplication loan) throws DatabaseException {
         String sql = "INSERT INTO loans (id, customer_id, applicant_name, loan_type, amount, tenure_months, "
-                + "interest_rate, monthly_emi, total_payable, status, purpose, admin_remarks, applied_at, reviewed_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "interest_rate, monthly_emi, total_payable, status, purpose, admin_remarks, applied_at, reviewed_at, remaining_principal, emis_paid) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -45,11 +45,13 @@ public class LoanDAOImpl implements LoanDAO {
             pstmt.setDouble(7, loan.getInterestRate());
             pstmt.setDouble(8, loan.getMonthlyEmi());
             pstmt.setDouble(9, loan.getMonthlyEmi() * loan.getTenureMonths());
-            pstmt.setString(10, loan.getStatus());
+            pstmt.setString(10, loan.getStatus() != null ? loan.getStatus() : "PENDING");
             pstmt.setString(11, loan.getPurpose());
             pstmt.setString(12, loan.getRemarks());
             pstmt.setString(13, loan.getAppliedAt());
             pstmt.setString(14, loan.getDecidedAt());
+            pstmt.setDouble(15, loan.getRemainingPrincipal() > 0 ? loan.getRemainingPrincipal() : loan.getAmount());
+            pstmt.setInt(16, loan.getEmisPaid());
 
             return pstmt.executeUpdate() > 0;
 
@@ -156,7 +158,7 @@ public class LoanDAOImpl implements LoanDAO {
 
     @Override
     public boolean update(LoanApplication loan) throws DatabaseException {
-        String sql = "UPDATE loans SET status = ?, admin_remarks = ?, reviewed_at = ? WHERE id = ?";
+        String sql = "UPDATE loans SET status = ?, admin_remarks = ?, reviewed_at = ?, remaining_principal = ?, emis_paid = ? WHERE id = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -165,7 +167,9 @@ public class LoanDAOImpl implements LoanDAO {
             pstmt.setString(1, loan.getStatus());
             pstmt.setString(2, loan.getRemarks());
             pstmt.setString(3, loan.getDecidedAt());
-            pstmt.setString(4, loan.getId());
+            pstmt.setDouble(4, loan.getRemainingPrincipal());
+            pstmt.setInt(5, loan.getEmisPaid());
+            pstmt.setString(6, loan.getId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new DatabaseException("Error updating loan: " + e.getMessage(), e);
@@ -225,6 +229,8 @@ public class LoanDAOImpl implements LoanDAO {
         loan.setRemarks(rs.getString("admin_remarks"));
         loan.setAppliedAt(rs.getString("applied_at"));
         loan.setDecidedAt(rs.getString("reviewed_at"));
+        loan.setRemainingPrincipal(rs.getDouble("remaining_principal"));
+        loan.setEmisPaid(rs.getInt("emis_paid"));
         return loan;
     }
 }

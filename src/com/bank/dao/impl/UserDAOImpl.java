@@ -32,8 +32,8 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public boolean save(User user) throws DatabaseException {
         String sql = "INSERT INTO users (id, username, password_hash, role, full_name, email, phone_number, "
-                + "address, pan_or_ssn, transaction_pin, occupation, monthly_income, department, clearance_level, is_frozen, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "address, pan_or_ssn, aadhaar_number, upi_id, transaction_pin, occupation, monthly_income, department, clearance_level, is_frozen, created_at, last_login) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -52,32 +52,39 @@ public class UserDAOImpl implements UserDAO {
                 Customer c = (Customer) user;
                 pstmt.setString(8, c.getAddress());
                 pstmt.setString(9, c.getPanOrTaxId());
-                pstmt.setString(10, c.getSecurityPin());
-                pstmt.setString(11, c.getOccupation());
-                pstmt.setDouble(12, c.getMonthlyIncome());
-                pstmt.setString(13, null);
-                pstmt.setInt(14, 0);
+                pstmt.setString(10, c.getAadhaarNumber());
+                pstmt.setString(11, c.getUpiId());
+                pstmt.setString(12, c.getSecurityPin());
+                pstmt.setString(13, c.getOccupation());
+                pstmt.setDouble(14, c.getMonthlyIncome());
+                pstmt.setString(15, null);
+                pstmt.setInt(16, 0);
             } else if (user instanceof Admin) {
                 Admin a = (Admin) user;
                 pstmt.setString(8, null);
                 pstmt.setString(9, null);
                 pstmt.setString(10, null);
                 pstmt.setString(11, null);
-                pstmt.setDouble(12, 0.0);
-                pstmt.setString(13, a.getDepartment());
-                pstmt.setInt(14, a.getAccessLevel());
+                pstmt.setString(12, null);
+                pstmt.setString(13, null);
+                pstmt.setDouble(14, 0.0);
+                pstmt.setString(15, a.getDepartment());
+                pstmt.setInt(16, a.getAccessLevel());
             } else {
                 pstmt.setString(8, null);
                 pstmt.setString(9, null);
                 pstmt.setString(10, null);
                 pstmt.setString(11, null);
-                pstmt.setDouble(12, 0.0);
+                pstmt.setString(12, null);
                 pstmt.setString(13, null);
-                pstmt.setInt(14, 0);
+                pstmt.setDouble(14, 0.0);
+                pstmt.setString(15, null);
+                pstmt.setInt(16, 0);
             }
 
-            pstmt.setBoolean(15, !user.isActive());
-            pstmt.setString(16, user.getCreatedAt());
+            pstmt.setBoolean(17, !user.isActive());
+            pstmt.setString(18, user.getCreatedAt());
+            pstmt.setString(19, user.getLastLogin());
 
             return pstmt.executeUpdate() > 0;
 
@@ -164,7 +171,9 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public boolean update(User user) throws DatabaseException {
-        String sql = "UPDATE users SET full_name = ?, email = ?, phone_number = ?, is_frozen = ? WHERE id = ?";
+        String sql = "UPDATE users SET full_name = ?, email = ?, phone_number = ?, is_frozen = ?, password_hash = ?, "
+                + "address = ?, pan_or_ssn = ?, aadhaar_number = ?, upi_id = ?, transaction_pin = ?, occupation = ?, monthly_income = ?, "
+                + "department = ?, clearance_level = ?, last_login = ? WHERE id = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -174,7 +183,44 @@ public class UserDAOImpl implements UserDAO {
             pstmt.setString(2, user.getEmail());
             pstmt.setString(3, user.getPhone());
             pstmt.setBoolean(4, !user.isActive());
-            pstmt.setString(5, user.getId());
+            pstmt.setString(5, user.getPasswordHash());
+
+            if (user instanceof Customer) {
+                Customer c = (Customer) user;
+                pstmt.setString(6, c.getAddress());
+                pstmt.setString(7, c.getPanOrTaxId());
+                pstmt.setString(8, c.getAadhaarNumber());
+                pstmt.setString(9, c.getUpiId());
+                pstmt.setString(10, c.getSecurityPin());
+                pstmt.setString(11, c.getOccupation());
+                pstmt.setDouble(12, c.getMonthlyIncome());
+                pstmt.setString(13, null);
+                pstmt.setInt(14, 0);
+            } else if (user instanceof Admin) {
+                Admin a = (Admin) user;
+                pstmt.setString(6, null);
+                pstmt.setString(7, null);
+                pstmt.setString(8, null);
+                pstmt.setString(9, null);
+                pstmt.setString(10, null);
+                pstmt.setString(11, null);
+                pstmt.setDouble(12, 0.0);
+                pstmt.setString(13, a.getDepartment());
+                pstmt.setInt(14, a.getAccessLevel());
+            } else {
+                pstmt.setString(6, null);
+                pstmt.setString(7, null);
+                pstmt.setString(8, null);
+                pstmt.setString(9, null);
+                pstmt.setString(10, null);
+                pstmt.setString(11, null);
+                pstmt.setDouble(12, 0.0);
+                pstmt.setString(13, null);
+                pstmt.setInt(14, 0);
+            }
+
+            pstmt.setString(15, user.getLastLogin());
+            pstmt.setString(16, user.getId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new DatabaseException("Error updating user: " + e.getMessage(), e);
@@ -227,21 +273,29 @@ public class UserDAOImpl implements UserDAO {
         String email = rs.getString("email");
         String phone = rs.getString("phone_number");
         boolean isFrozen = rs.getBoolean("is_frozen");
+        String createdAt = rs.getString("created_at");
+        String lastLogin = rs.getString("last_login");
 
         if ("ADMIN".equalsIgnoreCase(role)) {
             String department = rs.getString("department");
             int clearance = rs.getInt("clearance_level");
             Admin admin = new Admin(id, username, passwordHash, fullName, email, phone, department, clearance);
             admin.setActive(!isFrozen);
+            if (createdAt != null) admin.setCreatedAt(createdAt);
+            if (lastLogin != null) admin.setLastLogin(lastLogin);
             return admin;
         } else {
             String address = rs.getString("address");
             String pan = rs.getString("pan_or_ssn");
             String pin = rs.getString("transaction_pin");
-            Customer customer = new Customer(id, username, passwordHash, fullName, email, phone, address, pan, pin);
+            String aadhaar = rs.getString("aadhaar_number");
+            String upi = rs.getString("upi_id");
+            Customer customer = new Customer(id, username, passwordHash, fullName, email, phone, address, pan, aadhaar, upi, pin);
             customer.setOccupation(rs.getString("occupation"));
             customer.setMonthlyIncome(rs.getDouble("monthly_income"));
             customer.setActive(!isFrozen);
+            if (createdAt != null) customer.setCreatedAt(createdAt);
+            if (lastLogin != null) customer.setLastLogin(lastLogin);
             return customer;
         }
     }

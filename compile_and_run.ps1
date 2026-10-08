@@ -11,7 +11,7 @@ if (-not (Test-Path "bin")) {
 
 Write-Host "[1/2] Compiling all Core Java source files..." -ForegroundColor Green
 $javaFiles = Get-ChildItem -Path "src" -Recurse -Filter "*.java" | ForEach-Object { $_.FullName }
-javac -encoding UTF-8 -d bin -sourcepath src $javaFiles
+javac -encoding UTF-8 -d bin -cp "lib/*;src" -sourcepath src $javaFiles
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Compilation failed! Please check your JDK installation." -ForegroundColor Red
@@ -30,13 +30,13 @@ $choice = Read-Host "Enter your choice (1, 2, or 3) [Default: 1]"
 
 if ($choice -eq "2") {
     Write-Host "`n[Launching Desktop Java Swing GUI Interface...]" -ForegroundColor Green
-    java -cp bin com.bank.gui.BankSwingApp
+    java -cp "bin;lib/*" com.bank.gui.BankSwingApp
 } elseif ($choice -eq "3") {
     Write-Host "`n[Launching Web Server on http://localhost:8080 and Desktop Swing GUI...]" -ForegroundColor Green
     Start-Process "http://localhost:8080"
-    java -cp bin com.bank.Main --gui 8080
+    java -cp "bin;lib/*" com.bank.Main --gui 8080
 } else {
     Write-Host "`n[Launching Multi-threaded HTTP Web Banking Server on http://localhost:8080...]" -ForegroundColor Green
     Start-Process "http://localhost:8080"
-    java -cp bin com.bank.Main 8080
+    java -cp "bin;lib/*" com.bank.Main 8080
 }

@@ -46,6 +46,7 @@ public class AuthService implements IAuthService {
         }
 
         user.setLastLogin(LocalDateTime.now().toString());
+        dataStore.updateUser(user);
         String token = UUID.randomUUID().toString();
         dataStore.createSession(token, user.getId());
         dataStore.saveToFile();

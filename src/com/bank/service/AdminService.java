@@ -165,12 +165,14 @@ public class AdminService implements IAdminService {
             throw new ValidationException("User not found.");
         }
         user.setActive(active);
+        dataStore.updateUser(user);
 
         // Also freeze/unfreeze customer accounts
         if (user instanceof Customer) {
             List<Account> accounts = dataStore.getAccountsByCustomerId(targetUserId);
             for (Account a : accounts) {
                 a.setStatus(active ? "ACTIVE" : "FROZEN");
+                dataStore.updateAccount(a);
             }
         }
 

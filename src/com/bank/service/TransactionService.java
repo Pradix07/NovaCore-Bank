@@ -111,6 +111,8 @@ public class TransactionService implements ITransactionService {
             fromAccount.withdraw(amount);
             // Execute deposit
             toAccount.deposit(amount);
+            dataStore.updateAccount(fromAccount);
+            dataStore.updateAccount(toAccount);
 
             String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : (mode + " Transfer");
 
@@ -182,6 +184,8 @@ public class TransactionService implements ITransactionService {
         }
 
         account.deposit(amount);
+        dataStore.updateAccount(account);
+
         String refNum = "DEP" + SecurityUtil.generateReferenceNumber().replace("-", "").substring(0, 10);
         String txId = SecurityUtil.generateId("TXN");
         String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : "Instant UPI / Cash Deposit";
@@ -222,6 +226,8 @@ public class TransactionService implements ITransactionService {
         }
 
         account.withdraw(amount);
+        dataStore.updateAccount(account);
+
         String refNum = "ATM" + SecurityUtil.generateReferenceNumber().replace("-", "").substring(0, 10);
         String txId = SecurityUtil.generateId("TXN");
         String memo = (description != null && !description.trim().isEmpty()) ? description.trim() : "RuPay Debit Card / ATM Cash Withdrawal";

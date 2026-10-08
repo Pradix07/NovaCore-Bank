@@ -195,6 +195,7 @@ public class AccountService implements IAccountService {
 
         boolean newStatus = !account.isCardFrozen();
         account.setCardFrozen(newStatus);
+        dataStore.updateAccount(account);
         dataStore.saveToFile();
         return newStatus;
     }
@@ -221,6 +222,8 @@ public class AccountService implements IAccountService {
             }
             customer.setPasswordHash(SecurityUtil.hashPassword(newPassword.trim()));
         }
+
+        dataStore.updateUser(customer);
 
         dataStore.addAuditLog(new AuditLog(
                 SecurityUtil.generateId("LOG"),

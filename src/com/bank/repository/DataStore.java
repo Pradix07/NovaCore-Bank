@@ -1,12 +1,14 @@
 package com.bank.repository;
 
+import com.bank.dao.*;
+import com.bank.dao.impl.*;
 import com.bank.model.*;
-import com.bank.util.JsonUtil;
 import com.bank.util.SecurityUtil;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -14,18 +16,24 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * ============================================================================
- * DATA STORE (Thread-Safe Persistence & In-Memory Repository)
+ * DATA STORE (Thread-Safe Persistence & Repository backed by SQLite JDBC)
  * ============================================================================
- * Indian Banking System Data Store:
- * - Persists to data/bank_data.json
- * - Manages Savings, Current, Student, and Checking Accounts
- * - Supports Indian KYC (PAN, Aadhaar, UPI ID, IFSC)
- * - Thread-safe operations using ConcurrentHashMap, CopyOnWriteArrayList, ReentrantReadWriteLock
+ * Coordinates with DAO layer to provide ACID persistence to SQLite JDBC database.
+ * Supports Users, Accounts, Transactions, Loans, Investments, Audit Logs, Settings.
  */
 public class DataStore {
 
     private static DataStore instance;
 
+    // DAO Layer
+    private final UserDAO userDAO = new UserDAOImpl();
+    private final AccountDAO accountDAO = new AccountDAOImpl();
+    private final TransactionDAO transactionDAO = new TransactionDAOImpl();
+    private final LoanDAO loanDAO = new LoanDAOImpl();
+    private final AuditLogDAO auditLogDAO = new AuditLogDAOImpl();
+    private final DBConnectionManager dbManager = DBConnectionManager.getInstance();
+
+    // In-memory cache for fast lookups & thread safety
     private final Map<String, User> usersById = new ConcurrentHashMap<>();
     private final Map<String, User> usersByUsername = new ConcurrentHashMap<>();
     private final Map<String, Account> accountsByNumber = new ConcurrentHashMap<>();
@@ -36,8 +44,7 @@ public class DataStore {
     private final Map<String, String> sessionTokenToUserId = new ConcurrentHashMap<>();
     private SystemSettings systemSettings = new SystemSettings();
 
-    private final Path storagePath = Paths.get("data", "bank_data.json");
-    private final ReentrantReadWriteLock fileLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     private DataStore() {
         initStorage();
@@ -52,16 +59,80 @@ public class DataStore {
 
     private void initStorage() {
         try {
-            Files.createDirectories(storagePath.getParent());
-            if (Files.exists(storagePath) && Files.size(storagePath) > 10) {
-                loadFromFile();
-            } else {
-                seedInitialData();
-                saveToFile();
-            }
+            // Initialize SQLite schema and tables
+            DatabaseInitializer.initializeDatabase();
+            loadFromDatabase();
         } catch (Exception e) {
-            System.err.println("[DataStore] Warning: Could not initialize persistence. Falling back to default seed. " + e.getMessage());
+            System.err.println("[DataStore] Warning during database initialization: " + e.getMessage());
+            e.printStackTrace();
             seedInitialData();
+        }
+    }
+
+    public synchronized void loadFromDatabase() {
+        lock.writeLock().lock();
+        try {
+            usersById.clear();
+            usersByUsername.clear();
+            accountsByNumber.clear();
+            transactions.clear();
+            loans.clear();
+            investments.clear();
+            auditLogs.clear();
+
+            List<User> dbUsers = userDAO.findAll();
+            if (dbUsers == null || dbUsers.isEmpty()) {
+                System.out.println("[DataStore] No existing records found in SQLite database. Seeding initial data...");
+                seedInitialData();
+                return;
+            }
+
+            System.out.println("[DataStore] Loading existing banking records from SQLite database...");
+
+            // 1. Load Users
+            for (User u : dbUsers) {
+                usersById.put(u.getId(), u);
+                usersByUsername.put(u.getUsername().toLowerCase(), u);
+            }
+
+            // 2. Load Accounts
+            List<Account> dbAccounts = accountDAO.findAll();
+            for (Account a : dbAccounts) {
+                accountsByNumber.put(a.getAccountNumber(), a);
+                User u = usersById.get(a.getCustomerId());
+                if (u instanceof Customer) {
+                    ((Customer) u).addAccountNumber(a.getAccountNumber());
+                }
+            }
+
+            // 3. Load Transactions
+            List<Transaction> dbTx = transactionDAO.findAll();
+            transactions.addAll(dbTx);
+
+            // 4. Load Loans
+            List<LoanApplication> dbLoans = loanDAO.findAll();
+            loans.addAll(dbLoans);
+
+            // 5. Load Audit Logs
+            List<AuditLog> dbLogs = auditLogDAO.findAll();
+            auditLogs.addAll(dbLogs);
+
+            // 6. Load Investments
+            loadInvestmentsFromDB();
+
+            // 7. Load Settings
+            loadSettingsFromDB();
+
+            System.out.println("[DataStore] Successfully loaded: " + usersById.size() + " users, "
+                    + accountsByNumber.size() + " accounts, " + transactions.size() + " transactions, "
+                    + loans.size() + " loans, " + investments.size() + " investments, "
+                    + auditLogs.size() + " audit logs.");
+
+        } catch (Exception e) {
+            System.err.println("[DataStore] Error loading from SQLite: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
@@ -226,11 +297,11 @@ public class DataStore {
         addAccount(rohanStudent);
 
         // Sample Indian Banking Transactions
-        transactions.add(new Transaction("TXN-IN-001", TransactionType.DEPOSIT, 50000.00, "SALARY_CREDIT_IMPS", aaravSavings.getAccountNumber(), "Monthly Salary Credit via IMPS", 74500.00, aarav.getId(), "IMPS92810394812"));
-        transactions.add(new Transaction("TXN-IN-002", TransactionType.TRANSFER_OUT, 15000.00, aaravSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "UPI Transfer to Priya Sharma (NOVA0002002)", 59500.00, aarav.getId(), "UPI202610078891"));
-        transactions.add(new Transaction("TXN-IN-003", TransactionType.TRANSFER_IN, 15000.00, aaravSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "UPI Payment Received from Aarav Patel", 58250.00, priya.getId(), "UPI202610078891"));
-        transactions.add(new Transaction("TXN-IN-004", TransactionType.WITHDRAWAL, 5000.00, aaravCurrent.getAccountNumber(), "ATM_MUMBAI_FORT", "RuPay ATM Cash Withdrawal", 150000.00, aarav.getId(), "ATM20269988112"));
-        transactions.add(new Transaction("TXN-IN-005", TransactionType.DEPOSIT, 10000.00, "SCHOLARSHIP_NEFT", rohanStudent.getAccountNumber(), "National Merit Scholarship NEFT Disbursal", 18450.00, rohan.getId(), "NEFT9081237461"));
+        addTransaction(new Transaction("TXN-IN-001", TransactionType.DEPOSIT, 50000.00, "SALARY_CREDIT_IMPS", aaravSavings.getAccountNumber(), "Monthly Salary Credit via IMPS", 74500.00, aarav.getId(), "IMPS92810394812"));
+        addTransaction(new Transaction("TXN-IN-002", TransactionType.TRANSFER_OUT, 15000.00, aaravSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "UPI Transfer to Priya Sharma (NOVA0002002)", 59500.00, aarav.getId(), "UPI202610078891"));
+        addTransaction(new Transaction("TXN-IN-003", TransactionType.TRANSFER_IN, 15000.00, aaravSavings.getAccountNumber(), priyaSavings.getAccountNumber(), "UPI Payment Received from Aarav Patel", 58250.00, priya.getId(), "UPI202610078891"));
+        addTransaction(new Transaction("TXN-IN-004", TransactionType.WITHDRAWAL, 5000.00, aaravCurrent.getAccountNumber(), "ATM_MUMBAI_FORT", "RuPay ATM Cash Withdrawal", 150000.00, aarav.getId(), "ATM20269988112"));
+        addTransaction(new Transaction("TXN-IN-005", TransactionType.DEPOSIT, 10000.00, "SCHOLARSHIP_NEFT", rohanStudent.getAccountNumber(), "National Merit Scholarship NEFT Disbursal", 18450.00, rohan.getId(), "NEFT9081237461"));
 
         // Sample Loans (INR)
         LoanApplication loan1 = new LoanApplication("LOAN-IN-701", aarav.getId(), aarav.getFullName(), "HOME", 4500000.0, 180, 8.4, "Apartment Purchase in Mumbai Suburban");
@@ -238,298 +309,60 @@ public class DataStore {
         loan1.setDecidedAt("2026-09-15 10:30:00");
         loan1.setEmisPaid(6);
         loan1.setRemainingPrincipal(4420000.0);
-        loans.add(loan1);
+        addLoan(loan1);
 
         LoanApplication loan2 = new LoanApplication("LOAN-IN-702", priya.getId(), priya.getFullName(), "EDUCATION", 800000.0, 48, 7.2, "Post Graduate Financial Analytics Degree");
         loan2.setStatus("PENDING");
-        loans.add(loan2);
+        addLoan(loan2);
 
         // Sample Indian Investments
-        investments.add(new Investment("INV-IN-901", aarav.getId(), "FIXED_DEPOSIT", "Nova Shrestha 1-Year FD (7.5% p.a.)", 100000.0, 7.5, 12));
-        investments.add(new Investment("INV-IN-902", aarav.getId(), "MUTUAL_FUND", "Nifty 50 Bluechip Index Growth Fund", 50000.0, 12.5, 24));
-        investments.add(new Investment("INV-IN-903", priya.getId(), "GOLD_BOND", "RBI Sovereign Gold Bond (SGB) Series 2026", 75000.0, 6.5, 36));
+        addInvestment(new Investment("INV-IN-901", aarav.getId(), "FIXED_DEPOSIT", "Nova Shrestha 1-Year FD (7.5% p.a.)", 100000.0, 7.5, 12));
+        addInvestment(new Investment("INV-IN-902", aarav.getId(), "MUTUAL_FUND", "Nifty 50 Bluechip Index Growth Fund", 50000.0, 12.5, 24));
+        addInvestment(new Investment("INV-IN-903", priya.getId(), "GOLD_BOND", "RBI Sovereign Gold Bond (SGB) Series 2026", 75000.0, 6.5, 36));
 
         // Audit Logs
-        auditLogs.add(new AuditLog("LOG-IN-001", "USR-ADMIN-01", "Rajesh Kumar Sharma", "ADMIN", "SYSTEM_INIT", "NovaCore Bank of India core platform initialized with IFSC NOVA0001001.", "127.0.0.1"));
-        auditLogs.add(new AuditLog("LOG-IN-002", "USR-ADMIN-01", "Rajesh Kumar Sharma", "ADMIN", "LOAN_APPROVAL", "Approved Home Loan LOAN-IN-701 for customer Aarav Patel (₹45,00,000.00).", "127.0.0.1"));
+        addAuditLog(new AuditLog("LOG-IN-001", "USR-ADMIN-01", "Rajesh Kumar Sharma", "ADMIN", "SYSTEM_INIT", "NovaCore Bank of India core platform initialized with IFSC NOVA0001001.", "127.0.0.1"));
+        addAuditLog(new AuditLog("LOG-IN-002", "USR-ADMIN-01", "Rajesh Kumar Sharma", "ADMIN", "LOAN_APPROVAL", "Approved Home Loan LOAN-IN-701 for customer Aarav Patel (₹45,00,000.00).", "127.0.0.1"));
+
+        // Save System Settings
+        saveSettingsToDB(systemSettings);
     }
 
+    /**
+     * Persists all data. As operations are directly backed by SQLite JDBC, this method
+     * serves to flush any pending states and ensure consistency.
+     */
     public synchronized void saveToFile() {
-        fileLock.writeLock().lock();
-        try {
-            Map<String, Object> root = new HashMap<>();
-
-            List<Map<String, Object>> userList = new ArrayList<>();
-            for (User u : usersById.values()) {
-                Map<String, Object> umap = u.toMap();
-                umap.put("passwordHash", u.getPasswordHash());
-                userList.add(umap);
-            }
-            root.put("users", userList);
-
-            List<Map<String, Object>> accList = new ArrayList<>();
-            for (Account a : accountsByNumber.values()) {
-                accList.add(a.toMap());
-            }
-            root.put("accounts", accList);
-
-            List<Map<String, Object>> txList = new ArrayList<>();
-            for (Transaction t : transactions) {
-                txList.add(t.toMap());
-            }
-            root.put("transactions", txList);
-
-            List<Map<String, Object>> loanList = new ArrayList<>();
-            for (LoanApplication l : loans) {
-                loanList.add(l.toMap());
-            }
-            root.put("loans", loanList);
-
-            List<Map<String, Object>> invList = new ArrayList<>();
-            for (Investment inv : investments) {
-                invList.add(inv.toMap());
-            }
-            root.put("investments", invList);
-
-            List<Map<String, Object>> logList = new ArrayList<>();
-            for (AuditLog al : auditLogs) {
-                logList.add(al.toMap());
-            }
-            root.put("auditLogs", logList);
-            root.put("systemSettings", systemSettings.toMap());
-
-            String json = JsonUtil.toJson(root);
-            Files.writeString(storagePath, json, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (Exception e) {
-            System.err.println("[DataStore] Failed to save database: " + e.getMessage());
-        } finally {
-            fileLock.writeLock().unlock();
-        }
+        // SQLite JDBC persistence is immediate and transactional.
     }
 
-    @SuppressWarnings("unchecked")
-    public synchronized void loadFromFile() {
-        fileLock.readLock().lock();
-        try {
-            String json = Files.readString(storagePath, StandardCharsets.UTF_8);
-            Map<String, Object> root = JsonUtil.parseObject(json);
-            if (root == null || root.isEmpty()) {
-                seedInitialData();
-                return;
-            }
-
-            usersById.clear();
-            usersByUsername.clear();
-            accountsByNumber.clear();
-            transactions.clear();
-            loans.clear();
-            investments.clear();
-            auditLogs.clear();
-
-            // Load Users
-            List<Object> userList = (List<Object>) root.get("users");
-            if (userList != null) {
-                for (Object item : userList) {
-                    Map<String, Object> m = (Map<String, Object>) item;
-                    String role = (String) m.get("role");
-                    String id = (String) m.get("id");
-                    String username = (String) m.get("username");
-                    String passwordHash = (String) m.get("passwordHash");
-                    String fullName = (String) m.get("fullName");
-                    String email = (String) m.get("email");
-                    String phone = (String) m.get("phone");
-
-                    if ("ADMIN".equalsIgnoreCase(role)) {
-                        String dept = (String) m.getOrDefault("department", "Banking Operations");
-                        Number access = (Number) m.getOrDefault("accessLevel", 5);
-                        Admin admin = new Admin(id, username, passwordHash, fullName, email, phone, dept, access.intValue());
-                        if (m.containsKey("active")) admin.setActive(Boolean.TRUE.equals(m.get("active")));
-                        addUser(admin);
-                    } else {
-                        String address = (String) m.getOrDefault("address", "");
-                        String pan = (String) m.getOrDefault("panOrTaxId", "");
-                        String aadhaar = (String) m.getOrDefault("aadhaarNumber", "XXXX-XXXX-1234");
-                        String upi = (String) m.getOrDefault("upiId", username + "@novabank");
-                        String pin = (String) m.getOrDefault("securityPin", "1234");
-                        Customer customer = new Customer(id, username, passwordHash, fullName, email, phone, address, pan, aadhaar, upi, pin);
-                        if (m.containsKey("active")) customer.setActive(Boolean.TRUE.equals(m.get("active")));
-                        if (m.containsKey("occupation")) customer.setOccupation((String) m.get("occupation"));
-                        if (m.containsKey("monthlyIncome")) customer.setMonthlyIncome(((Number) m.get("monthlyIncome")).doubleValue());
-                        List<Object> accs = (List<Object>) m.get("accountNumbers");
-                        if (accs != null) {
-                            for (Object o : accs) customer.addAccountNumber(o.toString());
-                        }
-                        addUser(customer);
-                    }
-                }
-            }
-
-            // Load Accounts
-            List<Object> accList = (List<Object>) root.get("accounts");
-            if (accList != null) {
-                for (Object item : accList) {
-                    Map<String, Object> m = (Map<String, Object>) item;
-                    String type = (String) m.get("accountType");
-                    String num = (String) m.get("accountNumber");
-                    String custId = (String) m.get("customerId");
-                    double bal = ((Number) m.getOrDefault("balance", 0.0)).doubleValue();
-                    String curr = (String) m.getOrDefault("currency", "INR");
-
-                    Account account;
-                    if ("SAVINGS".equalsIgnoreCase(type)) {
-                        double rate = ((Number) m.getOrDefault("interestRate", 0.040)).doubleValue();
-                        double minBal = ((Number) m.getOrDefault("minimumBalance", 1000.0)).doubleValue();
-                        double maxWith = ((Number) m.getOrDefault("maxWithdrawLimit", 50000.0)).doubleValue();
-                        account = new SavingsAccount(num, custId, bal, curr, rate, minBal, maxWith);
-                    } else if ("CURRENT".equalsIgnoreCase(type)) {
-                        String trade = (String) m.getOrDefault("tradeLicenseOrGst", "GSTIN-PENDING");
-                        String bName = (String) m.getOrDefault("businessName", "Commercial Enterprise");
-                        double od = ((Number) m.getOrDefault("overdraftLimit", 50000.0)).doubleValue();
-                        double minBal = ((Number) m.getOrDefault("minimumBalance", 5000.0)).doubleValue();
-                        account = new CurrentAccount(num, custId, bal, curr, trade, bName, od, minBal);
-                    } else if ("STUDENT".equalsIgnoreCase(type)) {
-                        String inst = (String) m.getOrDefault("institutionName", "Educational Institution");
-                        String stuId = (String) m.getOrDefault("studentId", "STU-0000");
-                        double rate = ((Number) m.getOrDefault("interestRate", 0.035)).doubleValue();
-                        double minBal = ((Number) m.getOrDefault("minimumBalance", 100.0)).doubleValue();
-                        double maxBal = ((Number) m.getOrDefault("maxBalanceLimit", 100000.0)).doubleValue();
-                        double maxWith = ((Number) m.getOrDefault("maxWithdrawLimit", 20000.0)).doubleValue();
-                        account = new StudentAccount(num, custId, bal, curr, inst, stuId, rate, minBal, maxBal, maxWith);
-                    } else {
-                        double od = ((Number) m.getOrDefault("overdraftLimit", 25000.0)).doubleValue();
-                        account = new CheckingAccount(num, custId, bal, curr, od);
-                    }
-
-                    if (m.containsKey("ifscCode")) account.setIfscCode((String) m.get("ifscCode"));
-                    if (m.containsKey("branchName")) account.setBranchName((String) m.get("branchName"));
-                    if (m.containsKey("upiId")) account.setUpiId((String) m.get("upiId"));
-                    if (m.containsKey("nomineeName")) account.setNomineeName((String) m.get("nomineeName"));
-                    if (m.containsKey("status")) account.setStatus((String) m.get("status"));
-                    if (m.containsKey("cardNumber")) account.setCardNumber((String) m.get("cardNumber"));
-                    if (m.containsKey("cardExpiry")) account.setCardExpiry((String) m.get("cardExpiry"));
-                    if (m.containsKey("cardCvv")) account.setCardCvv((String) m.get("cardCvv"));
-                    if (m.containsKey("cardFrozen")) account.setCardFrozen(Boolean.TRUE.equals(m.get("cardFrozen")));
-                    addAccount(account);
-                }
-            }
-
-            // Load Transactions
-            List<Object> txs = (List<Object>) root.get("transactions");
-            if (txs != null) {
-                for (Object item : txs) {
-                    Map<String, Object> m = (Map<String, Object>) item;
-                    Transaction t = new Transaction();
-                    t.setId((String) m.get("id"));
-                    t.setTimestamp((String) m.get("timestamp"));
-                    String typeStr = (String) m.get("type");
-                    if (typeStr != null) {
-                        try { t.setType(TransactionType.valueOf(typeStr)); } catch (Exception ignored) {}
-                    }
-                    t.setAmount(((Number) m.getOrDefault("amount", 0.0)).doubleValue());
-                    t.setFromAccount((String) m.get("fromAccount"));
-                    t.setToAccount((String) m.get("toAccount"));
-                    t.setDescription((String) m.get("description"));
-                    t.setBalanceAfter(((Number) m.getOrDefault("balanceAfter", 0.0)).doubleValue());
-                    t.setStatus((String) m.getOrDefault("status", "SUCCESS"));
-                    t.setCustomerId((String) m.get("customerId"));
-                    t.setReferenceNumber((String) m.get("referenceNumber"));
-                    transactions.add(t);
-                }
-            }
-
-            // Load Loans
-            List<Object> lns = (List<Object>) root.get("loans");
-            if (lns != null) {
-                for (Object item : lns) {
-                    Map<String, Object> m = (Map<String, Object>) item;
-                    LoanApplication l = new LoanApplication();
-                    l.setId((String) m.get("id"));
-                    l.setCustomerId((String) m.get("customerId"));
-                    l.setCustomerName((String) m.get("customerName"));
-                    l.setLoanType((String) m.get("loanType"));
-                    l.setAmount(((Number) m.getOrDefault("amount", 0.0)).doubleValue());
-                    l.setTenureMonths(((Number) m.getOrDefault("tenureMonths", 12)).intValue());
-                    l.setInterestRate(((Number) m.getOrDefault("interestRate", 8.4)).doubleValue());
-                    l.setMonthlyEmi(((Number) m.getOrDefault("monthlyEmi", 0.0)).doubleValue());
-                    l.setPurpose((String) m.get("purpose"));
-                    l.setStatus((String) m.getOrDefault("status", "PENDING"));
-                    l.setAppliedAt((String) m.get("appliedAt"));
-                    l.setDecidedAt((String) m.get("decidedAt"));
-                    l.setRemarks((String) m.get("remarks"));
-                    l.setRemainingPrincipal(((Number) m.getOrDefault("remainingPrincipal", l.getAmount())).doubleValue());
-                    l.setEmisPaid(((Number) m.getOrDefault("emisPaid", 0)).intValue());
-                    loans.add(l);
-                }
-            }
-
-            // Load Investments
-            List<Object> invs = (List<Object>) root.get("investments");
-            if (invs != null) {
-                for (Object item : invs) {
-                    Map<String, Object> m = (Map<String, Object>) item;
-                    Investment inv = new Investment();
-                    inv.setId((String) m.get("id"));
-                    inv.setCustomerId((String) m.get("customerId"));
-                    inv.setType((String) m.get("type"));
-                    inv.setName((String) m.get("name"));
-                    inv.setPrincipalAmount(((Number) m.getOrDefault("principalAmount", 0.0)).doubleValue());
-                    inv.setInterestRate(((Number) m.getOrDefault("interestRate", 7.5)).doubleValue());
-                    inv.setDurationMonths(((Number) m.getOrDefault("durationMonths", 12)).intValue());
-                    inv.setExpectedReturn(((Number) m.getOrDefault("expectedReturn", 0.0)).doubleValue());
-                    inv.setCurrentMaturityValue(((Number) m.getOrDefault("currentMaturityValue", 0.0)).doubleValue());
-                    inv.setStartDate((String) m.get("startDate"));
-                    inv.setMaturityDate((String) m.get("maturityDate"));
-                    inv.setStatus((String) m.getOrDefault("status", "ACTIVE"));
-                    investments.add(inv);
-                }
-            }
-
-            // Load Audit Logs
-            List<Object> logs = (List<Object>) root.get("auditLogs");
-            if (logs != null) {
-                for (Object item : logs) {
-                    Map<String, Object> m = (Map<String, Object>) item;
-                    AuditLog al = new AuditLog(
-                            (String) m.get("id"),
-                            (String) m.get("actorId"),
-                            (String) m.get("actorName"),
-                            (String) m.get("actorRole"),
-                            (String) m.get("action"),
-                            (String) m.get("details"),
-                            (String) m.get("ipAddress")
-                    );
-                    al.setTimestamp((String) m.get("timestamp"));
-                    auditLogs.add(al);
-                }
-            }
-
-            // Load Settings
-            Map<String, Object> set = (Map<String, Object>) root.get("systemSettings");
-            if (set != null) {
-                if (set.containsKey("bankName")) systemSettings.setBankName((String) set.get("bankName"));
-                if (set.containsKey("defaultSavingsInterestRate")) systemSettings.setDefaultSavingsInterestRate(((Number) set.get("defaultSavingsInterestRate")).doubleValue());
-                if (set.containsKey("defaultLoanInterestRate")) systemSettings.setDefaultLoanInterestRate(((Number) set.get("defaultLoanInterestRate")).doubleValue());
-                if (set.containsKey("defaultFdInterestRate")) systemSettings.setDefaultFdInterestRate(((Number) set.get("defaultFdInterestRate")).doubleValue());
-                if (set.containsKey("dailyTransferLimit")) systemSettings.setDailyTransferLimit(((Number) set.get("dailyTransferLimit")).doubleValue());
-                if (set.containsKey("perTransactionLimit")) systemSettings.setPerTransactionLimit(((Number) set.get("perTransactionLimit")).doubleValue());
-                if (set.containsKey("minSavingsBalance")) systemSettings.setMinSavingsBalance(((Number) set.get("minSavingsBalance")).doubleValue());
-                if (set.containsKey("transactionFeePercent")) systemSettings.setTransactionFeePercent(((Number) set.get("transactionFeePercent")).doubleValue());
-                if (set.containsKey("maintenanceMode")) systemSettings.setMaintenanceMode(Boolean.TRUE.equals(set.get("maintenanceMode")));
-                if (set.containsKey("supportEmail")) systemSettings.setSupportEmail((String) set.get("supportEmail"));
-                if (set.containsKey("supportPhone")) systemSettings.setSupportPhone((String) set.get("supportPhone"));
-            }
-        } catch (Exception e) {
-            System.err.println("[DataStore] Failed to parse database file: " + e.getMessage());
-            seedInitialData();
-        } finally {
-            fileLock.readLock().unlock();
-        }
-    }
-
-    // CRUD Accessors
+    // ============================================================================
+    // USER OPERATIONS (Backed by UserDAO)
+    // ============================================================================
     public void addUser(User user) {
+        if (user == null) return;
         usersById.put(user.getId(), user);
         usersByUsername.put(user.getUsername().toLowerCase(), user);
+        try {
+            if (userDAO.findById(user.getId()).isPresent()) {
+                userDAO.update(user);
+            } else {
+                userDAO.save(user);
+            }
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to persist user to SQLite: " + e.getMessage());
+        }
+    }
+
+    public void updateUser(User user) {
+        if (user == null) return;
+        usersById.put(user.getId(), user);
+        usersByUsername.put(user.getUsername().toLowerCase(), user);
+        try {
+            userDAO.update(user);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to update user in SQLite: " + e.getMessage());
+        }
     }
 
     public void removeUser(String userId) {
@@ -537,31 +370,99 @@ public class DataStore {
         if (user != null) {
             usersByUsername.remove(user.getUsername().toLowerCase());
         }
+        try {
+            userDAO.deleteById(userId);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to delete user from SQLite: " + e.getMessage());
+        }
     }
 
     public User getUserById(String id) {
-        return usersById.get(id);
+        if (id == null) return null;
+        User cached = usersById.get(id);
+        if (cached != null) return cached;
+        try {
+            Optional<User> u = userDAO.findById(id);
+            if (u.isPresent()) {
+                usersById.put(u.get().getId(), u.get());
+                usersByUsername.put(u.get().getUsername().toLowerCase(), u.get());
+                return u.get();
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public User getUserByUsername(String username) {
         if (username == null) return null;
-        return usersByUsername.get(username.toLowerCase());
+        User cached = usersByUsername.get(username.toLowerCase());
+        if (cached != null) return cached;
+        try {
+            Optional<User> u = userDAO.findByUsername(username);
+            if (u.isPresent()) {
+                usersById.put(u.get().getId(), u.get());
+                usersByUsername.put(u.get().getUsername().toLowerCase(), u.get());
+                return u.get();
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public List<User> getAllUsers() {
         return new ArrayList<>(usersById.values());
     }
 
+    // ============================================================================
+    // ACCOUNT OPERATIONS (Backed by AccountDAO)
+    // ============================================================================
     public void addAccount(Account account) {
+        if (account == null) return;
         accountsByNumber.put(account.getAccountNumber(), account);
+        User u = usersById.get(account.getCustomerId());
+        if (u instanceof Customer) {
+            ((Customer) u).addAccountNumber(account.getAccountNumber());
+        }
+        try {
+            if (accountDAO.findById(account.getAccountNumber()).isPresent()) {
+                accountDAO.update(account);
+            } else {
+                accountDAO.save(account);
+            }
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to persist account to SQLite: " + e.getMessage());
+        }
+    }
+
+    public void updateAccount(Account account) {
+        if (account == null) return;
+        accountsByNumber.put(account.getAccountNumber(), account);
+        try {
+            accountDAO.update(account);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to update account in SQLite: " + e.getMessage());
+        }
     }
 
     public void removeAccount(String accountNumber) {
         accountsByNumber.remove(accountNumber);
+        try {
+            accountDAO.deleteById(accountNumber);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to delete account from SQLite: " + e.getMessage());
+        }
     }
 
     public Account getAccountByNumber(String accountNumber) {
-        return accountsByNumber.get(accountNumber);
+        if (accountNumber == null) return null;
+        Account cached = accountsByNumber.get(accountNumber.trim());
+        if (cached != null) return cached;
+        try {
+            Optional<Account> acc = accountDAO.findById(accountNumber.trim());
+            if (acc.isPresent()) {
+                accountsByNumber.put(acc.get().getAccountNumber(), acc.get());
+                return acc.get();
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public List<Account> getAccountsByCustomerId(String customerId) {
@@ -578,8 +479,17 @@ public class DataStore {
         return new ArrayList<>(accountsByNumber.values());
     }
 
+    // ============================================================================
+    // TRANSACTION OPERATIONS (Backed by TransactionDAO)
+    // ============================================================================
     public void addTransaction(Transaction transaction) {
+        if (transaction == null) return;
         transactions.add(0, transaction); // most recent first
+        try {
+            transactionDAO.save(transaction);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to persist transaction to SQLite: " + e.getMessage());
+        }
     }
 
     public List<Transaction> getAllTransactions() {
@@ -589,15 +499,39 @@ public class DataStore {
     public List<Transaction> getTransactionsByCustomerId(String customerId) {
         List<Transaction> res = new ArrayList<>();
         for (Transaction t : transactions) {
-            if (customerId.equals(t.getCustomerId())) {
+            if (customerId != null && customerId.equals(t.getCustomerId())) {
                 res.add(t);
             }
         }
         return res;
     }
 
+    // ============================================================================
+    // LOAN OPERATIONS (Backed by LoanDAO)
+    // ============================================================================
     public void addLoan(LoanApplication loan) {
+        if (loan == null) return;
         loans.add(0, loan);
+        try {
+            loanDAO.save(loan);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to persist loan to SQLite: " + e.getMessage());
+        }
+    }
+
+    public void updateLoan(LoanApplication loan) {
+        if (loan == null) return;
+        for (int i = 0; i < loans.size(); i++) {
+            if (loans.get(i).getId().equals(loan.getId())) {
+                loans.set(i, loan);
+                break;
+            }
+        }
+        try {
+            loanDAO.update(loan);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to update loan in SQLite: " + e.getMessage());
+        }
     }
 
     public List<LoanApplication> getAllLoans() {
@@ -605,24 +539,45 @@ public class DataStore {
     }
 
     public LoanApplication getLoanById(String id) {
+        if (id == null) return null;
         for (LoanApplication l : loans) {
             if (l.getId().equals(id)) return l;
         }
+        try {
+            Optional<LoanApplication> loan = loanDAO.findById(id);
+            if (loan.isPresent()) return loan.get();
+        } catch (Exception ignored) {}
         return null;
     }
 
     public List<LoanApplication> getLoansByCustomerId(String customerId) {
         List<LoanApplication> res = new ArrayList<>();
         for (LoanApplication l : loans) {
-            if (customerId.equals(l.getCustomerId())) {
+            if (customerId != null && customerId.equals(l.getCustomerId())) {
                 res.add(l);
             }
         }
         return res;
     }
 
+    // ============================================================================
+    // INVESTMENT OPERATIONS (Backed by SQLite JDBC)
+    // ============================================================================
     public void addInvestment(Investment investment) {
+        if (investment == null) return;
         investments.add(0, investment);
+        saveInvestmentToDB(investment);
+    }
+
+    public void updateInvestment(Investment investment) {
+        if (investment == null) return;
+        for (int i = 0; i < investments.size(); i++) {
+            if (investments.get(i).getId().equals(investment.getId())) {
+                investments.set(i, investment);
+                break;
+            }
+        }
+        updateInvestmentInDB(investment);
     }
 
     public List<Investment> getAllInvestments() {
@@ -630,6 +585,7 @@ public class DataStore {
     }
 
     public Investment getInvestmentById(String id) {
+        if (id == null) return null;
         for (Investment inv : investments) {
             if (inv.getId().equals(id)) return inv;
         }
@@ -639,30 +595,189 @@ public class DataStore {
     public List<Investment> getInvestmentsByCustomerId(String customerId) {
         List<Investment> res = new ArrayList<>();
         for (Investment inv : investments) {
-            if (customerId.equals(inv.getCustomerId())) {
+            if (customerId != null && customerId.equals(inv.getCustomerId())) {
                 res.add(inv);
             }
         }
         return res;
     }
 
+    private void saveInvestmentToDB(Investment inv) {
+        String sql = "INSERT INTO investments (id, customer_id, type, name, principal_amount, interest_rate, "
+                + "duration_months, expected_return, current_maturity_value, start_date, maturity_date, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dbManager.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, inv.getId());
+            pstmt.setString(2, inv.getCustomerId());
+            pstmt.setString(3, inv.getType());
+            pstmt.setString(4, inv.getName());
+            pstmt.setDouble(5, inv.getPrincipalAmount());
+            pstmt.setDouble(6, inv.getInterestRate());
+            pstmt.setInt(7, inv.getDurationMonths());
+            pstmt.setDouble(8, inv.getExpectedReturn());
+            pstmt.setDouble(9, inv.getCurrentMaturityValue());
+            pstmt.setString(10, inv.getStartDate());
+            pstmt.setString(11, inv.getMaturityDate());
+            pstmt.setString(12, inv.getStatus());
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to save investment to SQLite: " + e.getMessage());
+        } finally {
+            DBConnectionManager.closeResources(conn, pstmt);
+        }
+    }
+
+    private void updateInvestmentInDB(Investment inv) {
+        String sql = "UPDATE investments SET status = ?, current_maturity_value = ? WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dbManager.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, inv.getStatus());
+            pstmt.setDouble(2, inv.getCurrentMaturityValue());
+            pstmt.setString(3, inv.getId());
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to update investment in SQLite: " + e.getMessage());
+        } finally {
+            DBConnectionManager.closeResources(conn, pstmt);
+        }
+    }
+
+    private void loadInvestmentsFromDB() {
+        String sql = "SELECT * FROM investments ORDER BY start_date DESC";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dbManager.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Investment inv = new Investment();
+                inv.setId(rs.getString("id"));
+                inv.setCustomerId(rs.getString("customer_id"));
+                inv.setType(rs.getString("type"));
+                inv.setName(rs.getString("name"));
+                inv.setPrincipalAmount(rs.getDouble("principal_amount"));
+                inv.setInterestRate(rs.getDouble("interest_rate"));
+                inv.setDurationMonths(rs.getInt("duration_months"));
+                inv.setExpectedReturn(rs.getDouble("expected_return"));
+                inv.setCurrentMaturityValue(rs.getDouble("current_maturity_value"));
+                inv.setStartDate(rs.getString("start_date"));
+                inv.setMaturityDate(rs.getString("maturity_date"));
+                inv.setStatus(rs.getString("status"));
+                investments.add(inv);
+            }
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to load investments from SQLite: " + e.getMessage());
+        } finally {
+            DBConnectionManager.closeResources(pstmt, rs);
+            DBConnectionManager.closeConnection(conn);
+        }
+    }
+
+    // ============================================================================
+    // AUDIT LOG OPERATIONS (Backed by AuditLogDAO)
+    // ============================================================================
     public void addAuditLog(AuditLog log) {
+        if (log == null) return;
         auditLogs.add(0, log);
+        try {
+            auditLogDAO.save(log);
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to persist audit log to SQLite: " + e.getMessage());
+        }
     }
 
     public List<AuditLog> getAllAuditLogs() {
         return new ArrayList<>(auditLogs);
     }
 
+    // ============================================================================
+    // SYSTEM SETTINGS (Backed by SQLite JDBC)
+    // ============================================================================
     public SystemSettings getSystemSettings() {
         return systemSettings;
     }
 
     public void setSystemSettings(SystemSettings settings) {
+        if (settings == null) return;
         this.systemSettings = settings;
+        saveSettingsToDB(settings);
     }
 
-    // Sessions
+    private void saveSettingsToDB(SystemSettings s) {
+        String sql = "INSERT OR REPLACE INTO system_settings (id, bank_name, default_savings_interest_rate, "
+                + "default_loan_interest_rate, default_fd_interest_rate, daily_transfer_limit, per_transaction_limit, "
+                + "min_savings_balance, transaction_fee_percent, maintenance_mode, support_email, support_phone, currency_symbol) "
+                + "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dbManager.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, s.getBankName());
+            pstmt.setDouble(2, s.getDefaultSavingsInterestRate());
+            pstmt.setDouble(3, s.getDefaultLoanInterestRate());
+            pstmt.setDouble(4, s.getDefaultFdInterestRate());
+            pstmt.setDouble(5, s.getDailyTransferLimit());
+            pstmt.setDouble(6, s.getPerTransactionLimit());
+            pstmt.setDouble(7, s.getMinSavingsBalance());
+            pstmt.setDouble(8, s.getTransactionFeePercent());
+            pstmt.setBoolean(9, s.isMaintenanceMode());
+            pstmt.setString(10, s.getSupportEmail());
+            pstmt.setString(11, s.getSupportPhone());
+            pstmt.setString(12, s.getCurrencySymbol());
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to save settings to SQLite: " + e.getMessage());
+        } finally {
+            DBConnectionManager.closeResources(conn, pstmt);
+        }
+    }
+
+    private void loadSettingsFromDB() {
+        String sql = "SELECT * FROM system_settings WHERE id = 1";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dbManager.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                systemSettings.setBankName(rs.getString("bank_name"));
+                systemSettings.setDefaultSavingsInterestRate(rs.getDouble("default_savings_interest_rate"));
+                systemSettings.setDefaultLoanInterestRate(rs.getDouble("default_loan_interest_rate"));
+                systemSettings.setDefaultFdInterestRate(rs.getDouble("default_fd_interest_rate"));
+                systemSettings.setDailyTransferLimit(rs.getDouble("daily_transfer_limit"));
+                systemSettings.setPerTransactionLimit(rs.getDouble("per_transaction_limit"));
+                systemSettings.setMinSavingsBalance(rs.getDouble("min_savings_balance"));
+                systemSettings.setTransactionFeePercent(rs.getDouble("transaction_fee_percent"));
+                systemSettings.setMaintenanceMode(rs.getBoolean("maintenance_mode"));
+                systemSettings.setSupportEmail(rs.getString("support_email"));
+                systemSettings.setSupportPhone(rs.getString("support_phone"));
+                systemSettings.setCurrencySymbol(rs.getString("currency_symbol"));
+            } else {
+                saveSettingsToDB(systemSettings);
+            }
+        } catch (Exception e) {
+            System.err.println("[DataStore] Failed to load settings from SQLite: " + e.getMessage());
+        } finally {
+            DBConnectionManager.closeResources(pstmt, rs);
+            DBConnectionManager.closeConnection(conn);
+        }
+    }
+
+    // ============================================================================
+    // SESSIONS
+    // ============================================================================
     public void createSession(String token, String userId) {
         sessionTokenToUserId.put(token, userId);
     }

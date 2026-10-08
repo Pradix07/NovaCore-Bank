@@ -122,6 +122,7 @@ public class Bank implements Serializable {
             throw new AccountNotFoundException("Account number '" + accountNumber + "' does not exist in NovaCore Bank of India.");
         }
         acc.deposit(amount);
+        DataStore.getInstance().updateAccount(acc);
         DataStore.getInstance().saveToFile();
     }
 
@@ -138,6 +139,7 @@ public class Bank implements Serializable {
             throw new AccountNotFoundException("Account number '" + accountNumber + "' does not exist in NovaCore Bank of India.");
         }
         acc.withdraw(amount);
+        DataStore.getInstance().updateAccount(acc);
         DataStore.getInstance().saveToFile();
     }
 
