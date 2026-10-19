@@ -68,6 +68,8 @@ You can log in with any of these pre-created accounts:
 - **Fixed Deposits & Gold:** Invest money in Fixed Deposits (7.5% interest) and Sovereign Gold Bonds.
 - **Loans & EMI:** Apply for Personal, Home, or Education loans with monthly EMI calculation.
 - **Safe & Secure:** Passwords and transactions are protected with security checks.
+helps efficiently
+
 
 ---
 
